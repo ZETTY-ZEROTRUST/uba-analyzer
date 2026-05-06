@@ -1,0 +1,9 @@
+.env
+.env.*
+__pycache__/
+*.pyc
+*.bak
+*.bak.*
+*.log
+uba.log
+test_*.py
