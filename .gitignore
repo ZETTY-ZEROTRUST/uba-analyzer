@@ -7,3 +7,6 @@ __pycache__/
 *.log
 uba.log
 test_*.py
+
+# 로컬 작업 메모 - 작업자별 진행 추적, 트래킹용임
+PROGRESS.md
