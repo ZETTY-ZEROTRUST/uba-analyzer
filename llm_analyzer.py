@@ -279,8 +279,6 @@ def analyze_with_llm(passed_logs, client=None):
 # ============================================================
 
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, '/home/ssm-user/uba-analyzer')
     from log_fetcher import get_es_client, fetch_recent_logs
     from rule_engine import analyze_logs
     

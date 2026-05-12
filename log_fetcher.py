@@ -7,6 +7,7 @@ ES filebeat-* 인덱스에서 nginx 로그 가져오기
 """
 from elasticsearch import Elasticsearch
 from datetime import datetime, timedelta, UTC
+from dotenv import load_dotenv
 import urllib3
 import sys
 import os
@@ -15,13 +16,16 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from jwt_parser import decode_jwt_payload, extract_uba_fields
 
+# .env 로드 (ES_HOST, ES_USER, ES_PASS)
+load_dotenv()
+
 urllib3.disable_warnings()
 
 
-# === ES 설정 ===
-ES_HOST = "https://10.0.41.10:9200"
-ES_USER = "elastic"
-ES_PASS = "Qx74mrJEwWv3E++6F-AY"
+# === ES 설정 (env 기반) ===
+ES_HOST = os.environ["ES_HOST"]
+ES_USER = os.environ["ES_USER"]
+ES_PASS = os.environ["ES_PASS"]
 INDEX_PATTERN = "filebeat-*"
 
 
