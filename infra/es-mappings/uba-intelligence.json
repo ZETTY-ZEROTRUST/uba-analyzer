@@ -2,10 +2,10 @@
   "index_patterns": ["uba-intelligence-*"],
   "_meta": {
     "description": "Phase 3b 출력. Sonnet 4.6 인텔리전스 리포트 (시간별/일일 캠페인 분석). 직전 1h/24h uba-alerts 묶음 + 50점 미만 누적 활동 분석.",
-    "spec_version": "v10",
-    "spec_version_notes": "v9 §6.6 base + v10 timeline nested 배열 (multi-phase 캠페인 재구성) + LLM 메타/감사 필드",
+    "spec_version": "v11",
+    "spec_version_notes": "v10 base + 시각화 Kibana 통일 (Grafana 표기 폐기, Phase 5 패널 8 markdown으로 소비)",
     "owner_track": "C (LLM + 알림 — intelligence_runner)",
-    "consumers": ["A (Phase 4 slack_intelligence_formatter 일일 요약 발송)", "A (Phase 5 Grafana 패널 12 텍스트)"]
+    "consumers": ["A (Phase 4 slack_intelligence_formatter 일일 요약 발송)", "A (Phase 5 Kibana 8 패널 — 패널 8 markdown)"]
   },
   "template": {
     "settings": {
