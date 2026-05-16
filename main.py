@@ -19,8 +19,6 @@ import argparse
 import logging
 from datetime import datetime, UTC
 
-sys.path.insert(0, '/home/ssm-user/uba-analyzer')
-
 from log_fetcher import get_es_client, fetch_recent_logs
 from rule_engine import analyze_logs
 from alert_saver import save_alerts, save_llm_alerts

@@ -1,32 +1,37 @@
 """
-ES filebeat-* 인덱스에서 nginx 로그 가져오기
+ES filebeat-* 인덱스에서 nginx 로그 가져오기 (v12)
 
-- 최근 N분 윈도우 조회
-- 필드 정규화 (문자열 → 적절한 타입)
-- JWT 디코딩 통합 (jwt_parser 활용)
+- 최근 N분 / 임의 시간 범위 윈도우 조회
+- 필드 정규화: Filebeat 가 분해한 jwt object + asn-classify 메타를 평탄화
+- ★ v12: JWT 디코드 안 함 (Filebeat script processor 가 ingestion 에서 끝냄).
+  raw["jwt"] 는 이미 11+ 클레임 object.
 """
 from elasticsearch import Elasticsearch
-from datetime import datetime, timedelta, UTC
+from datetime import datetime, timedelta, timezone, UTC
+from dotenv import load_dotenv
 import urllib3
 import sys
 import os
 
 # 같은 디렉토리의 jwt_parser 임포트
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from jwt_parser import decode_jwt_payload, extract_uba_fields
+from jwt_parser import derive_token_fields
+
+# .env 로드 (ES_HOST, ES_USER, ES_PASS)
+load_dotenv()
 
 urllib3.disable_warnings()
 
 
-# === ES 설정 ===
-ES_HOST = "https://10.0.41.10:9200"
-ES_USER = "elastic"
-ES_PASS = "Qx74mrJEwWv3E++6F-AY"
+# === ES 설정 (env 기반) ===
+ES_HOST = os.environ["ES_HOST"]
+ES_USER = os.environ["ES_USER"]
+ES_PASS = os.environ["ES_PASS"]
 INDEX_PATTERN = "filebeat-*"
 
 
 def get_es_client():
-    """ES 클라이언트 생성 (한 번만)"""
+    """ES 클라이언트 생성"""
     return Elasticsearch(
         [ES_HOST],
         basic_auth=(ES_USER, ES_PASS),
@@ -50,150 +55,139 @@ def safe_float(value, default=0.0):
         return default
 
 
+def iso_to_epoch(ts):
+    """ES @timestamp ISO 문자열 → epoch seconds (int). 실패 시 None."""
+    if not ts:
+        return None
+    try:
+        # "2026-05-13T09:13:13Z" / "...+00:00" 모두 처리
+        return int(datetime.fromisoformat(ts.replace("Z", "+00:00")).timestamp())
+    except (ValueError, AttributeError):
+        return None
+
+
 def normalize_log(raw):
     """
-    Filebeat 원본 로그 → 분석용 정규화 형식
-    
-    - 문자열 필드를 적절한 타입으로 변환
-    - JWT 디코딩 + 필드 추출
-    - 메타 필드(ecs, host, agent 등) 제거
+    Filebeat filebeat-* doc (v12) → 분석용 정규화 레코드.
+
+    raw["jwt"] 는 Filebeat script processor 가 분해한 object (alg/kid/sub/jti/iat/
+    exp/auth_time/iss/aud/client_id/scp/acr/amr/ext{LSID,fiat,v}).
+    raw 의 client_ip / ip_class / ip_asn 등은 asn-classify pipeline (또는 seed) 산출.
     """
-    # JWT 디코딩
-    jwt_payload = decode_jwt_payload(raw.get("jwt", ""))
-    jwt_fields = extract_uba_fields(jwt_payload) if jwt_payload else {}
-    
-    # 정규화된 로그
+    jwt = raw.get("jwt") or {}
+    ext = jwt.get("ext") or {}
+
+    timestamp = raw.get("@timestamp")
+    # 토큰 수명 파생은 wall-clock now 가 아니라 서버 수신 시각 기준 (과거 로그 분석)
+    receive_epoch = iso_to_epoch(timestamp)
+    iat = jwt.get("iat")
+    exp = jwt.get("exp")
+    derived = derive_token_fields(iat, exp, receive_epoch if receive_epoch else 0)
+
     return {
-        "@timestamp": raw.get("@timestamp"),
-        "nginx_time": raw.get("time"),
+        # === 시각 ===
+        "timestamp": timestamp,
+        "receive_epoch": receive_epoch,        # 서버 수신 시각 — token_replay 윈도우 기준
+
+        # === 요청 ===
         "method": raw.get("method", ""),
         "uri": raw.get("uri", ""),
         "status": safe_int(raw.get("status")),
-        "ip": raw.get("ip"),
         "response_time": safe_float(raw.get("response_time")),
         "bytes_sent": safe_int(raw.get("bytes_sent")),
-        "jwt_raw": raw.get("jwt", ""),
-        
-        # JWT에서 추출한 식별 정보 (있으면)
-        "user_id": jwt_fields.get("user_id"),
-        "jwt_id": jwt_fields.get("jwt_id"),
-        "session_id": jwt_fields.get("session_id"),
-        "client_id": jwt_fields.get("client_id"),
-        "jwt_issued_at": jwt_fields.get("jwt_issued_at"),
-        "jwt_expires_at": jwt_fields.get("jwt_expires_at"),
-        "auth_time": jwt_fields.get("auth_time"),
-        "scopes": jwt_fields.get("scopes", []),
-        "audiences": jwt_fields.get("audiences", []),
-        "issuer": jwt_fields.get("issuer"),
-        
-        # JWT 파생 필드 (lifecycle, status)
-        "token_lifecycle": jwt_fields.get("token_lifecycle"),
-        "token_status": jwt_fields.get("token_status"),
-        "token_age_seconds": jwt_fields.get("token_age_seconds"),
-        "token_ttl_seconds": jwt_fields.get("token_ttl_seconds"),
+        "user_agent": raw.get("user_agent"),
+
+        # === IP / ASN 분류 (asn-classify or seed) ===
+        "client_ip": raw.get("client_ip"),     # 실 클라이언트 (x_forwarded_for 첫 IP)
+        "alb_ip": raw.get("ip"),               # nginx 가 본 직접 클라이언트 (ALB)
+        "ip_class": raw.get("ip_class"),       # cgnat_kr / cloud / unknown ...
+        "ip_asn": raw.get("ip_asn"),
+        "ip_org": raw.get("ip_org"),
+        "ip_country": raw.get("ip_country"),
+        "is_nat_whitelisted": raw.get("is_nat_whitelisted"),
+
+        # === seed provenance (실 트래픽엔 없음 — zeti_seed 메타) ===
+        "seed_scenario": (raw.get("zeti_seed") or {}).get("scenario"),
+        "baseline_eligible": (raw.get("zeti_seed") or {}).get("baseline_eligible", True),
+
+        # === JWT 클레임 (Filebeat 분해 완료) ===
+        "user_id": jwt.get("sub"),
+        "jwt_id": jwt.get("jti"),
+        "session_id": ext.get("LSID"),
+        "client_id": jwt.get("client_id"),
+        "alg": jwt.get("alg"),
+        "kid": jwt.get("kid"),
+        "jwt_issued_at": iat,
+        "jwt_expires_at": exp,
+        "auth_time": jwt.get("auth_time"),
+        "acr": jwt.get("acr"),
+        "amr": jwt.get("amr") or [],
+        "scopes": jwt.get("scp") or [],
+        "audiences": jwt.get("aud") or [],
+        "issuer": jwt.get("iss"),
+
+        # === JWT 파생 필드 ===
+        "token_lifecycle": derived.get("token_lifecycle"),
+        "token_status": derived.get("token_status"),
+        "token_age_seconds": derived.get("token_age_seconds"),
+        "token_ttl_seconds": derived.get("token_ttl_seconds"),
+    }
+
+
+def _range_query(start, end, limit):
+    return {
+        "query": {"range": {"@timestamp": {"gte": start.isoformat(), "lte": end.isoformat()}}},
+        "size": limit,
+        "sort": [{"@timestamp": "asc"}],
     }
 
 
 def fetch_recent_logs(es=None, minutes=15, limit=10000):
+    """최근 N분 nginx 로그 → 정규화 레코드 리스트."""
+    if es is None:
+        es = get_es_client()
+    now = datetime.now(UTC)
+    return fetch_logs_in_range(es, now - timedelta(minutes=minutes), now, limit)
+
+
+def fetch_logs_in_range(es, start, end, limit=10000):
     """
-    최근 N분 nginx 로그 가져오기
-    
-    Args:
-        es: ES 클라이언트 (없으면 새로 생성)
-        minutes: 조회 윈도우 (분)
-        limit: 최대 조회 건수
-    
-    Returns:
-        list of dict: 정규화된 로그
+    임의 [start, end] 구간의 nginx 로그 → 정규화 레코드 리스트.
+
+    seed baseline 은 과거 72h 구간이므로 minutes 윈도우로는 못 잡는다.
+    Phase 1 aggregator 는 이 함수로 윈도우를 직접 지정한다.
     """
     if es is None:
         es = get_es_client()
-    
-    now = datetime.now(UTC)
-    start_time = now - timedelta(minutes=minutes)
-    
-    query = {
-        "query": {
-            "range": {
-                "@timestamp": {
-                    "gte": start_time.isoformat(),
-                    "lte": now.isoformat()
-                }
-            }
-        },
-        "size": limit,
-        "sort": [{"@timestamp": "asc"}]
-    }
-    
     try:
-        result = es.search(index=INDEX_PATTERN, body=query)
-        raw_logs = [hit["_source"] for hit in result["hits"]["hits"]]
-        return [normalize_log(log) for log in raw_logs]
+        result = es.search(index=INDEX_PATTERN, body=_range_query(start, end, limit))
+        return [normalize_log(hit["_source"]) for hit in result["hits"]["hits"]]
     except Exception as e:
         print(f"  [ERROR] ES 조회 실패: {e}")
         return []
 
 
 def fetch_logs_for_user(es, user_id, minutes=60):
-    """특정 user_id의 최근 N분 로그"""
-    if es is None:
-        es = get_es_client()
-    
-    now = datetime.now(UTC)
-    start_time = now - timedelta(minutes=minutes)
-    
-    # JWT 디코딩 후 user_id 매칭은 클라이언트 측에서
-    # (ES에는 user_id 필드가 없음)
-    raw_results = []
-    query = {
-        "query": {
-            "range": {
-                "@timestamp": {
-                    "gte": start_time.isoformat(),
-                    "lte": now.isoformat()
-                }
-            }
-        },
-        "size": 10000,
-        "sort": [{"@timestamp": "asc"}]
-    }
-    
-    result = es.search(index=INDEX_PATTERN, body=query)
-    all_logs = [normalize_log(hit["_source"]) for hit in result["hits"]["hits"]]
-    
-    return [log for log in all_logs if log.get("user_id") == user_id]
+    """특정 user_id 의 최근 N분 로그 (클라이언트 측 필터)."""
+    logs = fetch_recent_logs(es, minutes=minutes)
+    return [log for log in logs if log.get("user_id") == user_id]
 
 
 # === 테스트 ===
 if __name__ == "__main__":
-    print("=== log_fetcher 테스트 ===\n")
-    
+    print("=== log_fetcher 연결 테스트 ===\n")
     es = get_es_client()
     info = es.info()
     print(f"ES 연결 OK - 버전: {info['version']['number']}")
-    
-    print("\n=== 최근 15분 로그 ===")
-    logs = fetch_recent_logs(es, minutes=15)
-    print(f"총 {len(logs)}건\n")
-    
+
+    logs = fetch_recent_logs(es, minutes=60)
+    print(f"\n최근 60분 로그: {len(logs)}건")
     if logs:
-        print("=== 최신 5건 (정규화된 형식) ===")
-        for log in logs[-5:]:
-            print(f"\n  [{log['@timestamp']}]")
-            print(f"  {log['method']} {log['uri'][:50]}")
-            print(f"  ip={log['ip']}, status={log['status']}, bytes={log['bytes_sent']}")
-            if log.get("user_id"):
-                print(f"  user_id={log['user_id']}, jwt_id={log['jwt_id']}")
-                print(f"  token_status={log['token_status']}, lifecycle={log['token_lifecycle']}")
-            elif log.get("jwt_raw"):
-                print(f"  jwt(raw): {log['jwt_raw'][:50]}...  (디코딩 실패)")
-        
-        # JWT 있는 로그 통계
-        with_jwt = [log for log in logs if log.get("user_id")]
-        print(f"\n=== 통계 ===")
-        print(f"  전체: {len(logs)}건")
-        print(f"  JWT 디코딩 성공: {len(with_jwt)}건")
-        print(f"  유저 수 (unique user_id): {len(set(log['user_id'] for log in with_jwt))}")
-        print(f"  IP 수 (unique ip): {len(set(log['ip'] for log in logs if log.get('ip')))}")
-    else:
-        print("  (로그 없음)")
+        with_jwt = [g for g in logs if g.get("user_id")]
+        print(f"  JWT 클레임 있는 로그: {len(with_jwt)}건")
+        print(f"  unique user_id: {len(set(g['user_id'] for g in with_jwt))}")
+        print(f"  unique client_ip: {len(set(g['client_ip'] for g in logs if g.get('client_ip')))}")
+        sample = logs[-1]
+        print(f"\n  샘플: {sample['method']} {sample['uri'][:40]} "
+              f"user={sample['user_id']} ip_class={sample['ip_class']} "
+              f"token_status={sample['token_status']}")

@@ -6,15 +6,20 @@ rule_engine.analyze_logs()의 결과를 ES uba-alerts-* 인덱스에 저장.
 """
 from datetime import datetime, UTC
 from elasticsearch import Elasticsearch, helpers
+from dotenv import load_dotenv
+import os
 import urllib3
+
+# .env 로드
+load_dotenv()
 
 urllib3.disable_warnings()
 
 
-# === ES 설정 ===
-ES_HOST = "https://10.0.41.10:9200"
-ES_USER = "elastic"
-ES_PASS = "Qx74mrJEwWv3E++6F-AY"
+# === ES 설정 (env 기반) ===
+ES_HOST = os.environ["ES_HOST"]
+ES_USER = os.environ["ES_USER"]
+ES_PASS = os.environ["ES_PASS"]
 
 
 def get_es_client():
@@ -186,8 +191,6 @@ def query_alerts(es=None, hours=1, severity=None):
 # ============================================================
 
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, '/home/ssm-user/uba-analyzer')
     from log_fetcher import fetch_recent_logs
     from rule_engine import analyze_logs
     

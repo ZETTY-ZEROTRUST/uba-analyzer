@@ -10,29 +10,19 @@ LLM은 사용자별 행동 패턴을 자연어로 분석하고 알림 생성.
   - Claude Haiku 4.5 (저렴한 모델)
 """
 import os
+import sys
 import json
 import logging
 from collections import defaultdict
 from anthropic import Anthropic
+from dotenv import load_dotenv
 
 
-# === 환경 변수 로드 ===
-def load_env():
-    """~/uba-analyzer/.env 로드"""
-    env_path = os.path.expanduser("~/uba-analyzer/.env")
-    if os.path.exists(env_path):
-        with open(env_path) as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#") and "=" in line:
-                    key, val = line.split("=", 1)
-                    os.environ[key.strip()] = val.strip()
-
-load_env()
+load_dotenv()
 
 
 # === LLM 설정 ===
-MODEL = "claude-haiku-4-5"
+MODEL = "claude-haiku-4-5-20251001"
 MAX_TOKENS = 1024
 
 
@@ -279,8 +269,6 @@ def analyze_with_llm(passed_logs, client=None):
 # ============================================================
 
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, '/home/ssm-user/uba-analyzer')
     from log_fetcher import get_es_client, fetch_recent_logs
     from rule_engine import analyze_logs
     

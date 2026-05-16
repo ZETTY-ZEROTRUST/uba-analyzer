@@ -312,8 +312,6 @@ def analyze_logs(logs):
 # ============================================================
 
 if __name__ == "__main__":
-    import sys
-    sys.path.insert(0, '/home/ssm-user/uba-analyzer')
     from log_fetcher import get_es_client, fetch_recent_logs
     
     print("=== Rule Engine 테스트 (실제 데이터) ===\n")
