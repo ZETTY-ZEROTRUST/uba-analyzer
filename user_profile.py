@@ -505,20 +505,48 @@ def record_alert(es, risk_doc):
 # ────────────────────────────────────────────────────────────────────────────
 # 배치 헬퍼 — pipeline.py 가 한 번에 호출
 # ────────────────────────────────────────────────────────────────────────────
-def update_from_user_events(es, user_events, raw_logs_by_user=None):
-    """user_events 리스트 전체를 프로필로 누적. 옵션으로 raw_logs 도 전달 가능.
+def update_from_user_events(es, user_events, raw_logs_by_user_window=None):
+    """user_events 리스트 전체를 프로필로 누적.
 
     Args:
         user_events: event_aggregator.aggregate_user_events() 출력 리스트.
-        raw_logs_by_user: {user_id: [logs...]} dict. 있으면 user_event 에 _raw_logs
-                          주입 후 update — JWT 메타 / 시간대 / endpoint 학습.
+        raw_logs_by_user_window: {(user_id, window_start_epoch): [logs...]} dict.
+                                 ★ 반드시 (user, window) 키여야 한다 — user 단위로만
+                                 묶어 주면 update_from_window 가 매 호출마다 사용자
+                                 전체 로그를 받아 카운트가 윈도우 수만큼 부풀려진다.
+                                 None 이면 기본 카운트만 학습.
+
+    Backward compat: 옛 인터페이스 (user_id → logs) 도 자동 감지해 호환.
     """
-    raw_logs_by_user = raw_logs_by_user or {}
+    raw_logs_by_user_window = raw_logs_by_user_window or {}
+
+    # 자동 감지 — 키가 tuple 이면 신규 인터페이스, str/int 면 옛 인터페이스 (deprecated).
+    is_new_interface = any(isinstance(k, tuple) for k in raw_logs_by_user_window.keys())
+    if raw_logs_by_user_window and not is_new_interface:
+        logger.warning("update_from_user_events: raw_logs 키가 user_id 단일 — "
+                       "(user_id, window_start_epoch) tuple 권장 (deprecated)")
+
     results = {"created": 0, "updated": 0, "failed": 0}
     for ue in user_events:
         uid = str(ue.get("target_id") or "")
-        if uid and uid in raw_logs_by_user:
-            ue["_raw_logs"] = raw_logs_by_user[uid]
+        if uid:
+            if is_new_interface:
+                # window_start (ISO 문자열) → epoch
+                window_start_iso = ue.get("window_start")
+                if window_start_iso:
+                    try:
+                        ws_dt = datetime.fromisoformat(
+                            window_start_iso.replace("Z", "+00:00"))
+                        ws_epoch = int(ws_dt.timestamp())
+                        key = (uid, ws_epoch)
+                        if key in raw_logs_by_user_window:
+                            ue["_raw_logs"] = raw_logs_by_user_window[key]
+                    except Exception as e:
+                        logger.warning(f"window_start 파싱 실패: {e}")
+            else:
+                # 옛 인터페이스 — 인플레이션 가능성 있음
+                if uid in raw_logs_by_user_window:
+                    ue["_raw_logs"] = raw_logs_by_user_window[uid]
         r = update_from_window(es, ue)
         if r.get("created"):
             results["created"] += 1

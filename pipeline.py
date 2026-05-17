@@ -80,17 +80,23 @@ def run(hours, write=True, rebuild_baseline=True):
         # ─────────────────────────────────────────────────────────────
         # Phase 2.5 — 사용자별 누적 프로필 (uba-user-profiles)
         # ─────────────────────────────────────────────────────────────
-        # event_aggregator 출력만 갖고도 기본 카운트는 채워지지만, raw_logs 를 함께
-        # 주면 JWT 메타(acr/scopes/aud) / 시간대 / endpoint 분포 / IP 이력까지 학습.
+        # raw_logs 는 (user_id, window_start_epoch) 기준으로 분할한다. 사용자 단위로만
+        # 묶으면 update_from_window 가 매 윈도우마다 사용자 전체 72h 로그를 통째로
+        # 받아 status/endpoint/ip 카운트가 윈도우 수만큼 부풀려진다 (인플레이션 버그).
         log.info("[6] 사용자 프로필 누적 (uba-user-profiles)")
         try:
-            raw_logs_by_user = {}
+            WINDOW_SECONDS = 300   # event_aggregator.WINDOW_SECONDS 와 동일
+            raw_logs_by_user_window = {}
             for g in logs:
                 uid = g.get("user_id")
-                if uid:
-                    raw_logs_by_user.setdefault(uid, []).append(g)
+                epoch = g.get("receive_epoch")
+                if not uid or not epoch:
+                    continue
+                win_start = (epoch // WINDOW_SECONDS) * WINDOW_SECONDS
+                raw_logs_by_user_window.setdefault((uid, win_start), []).append(g)
+
             up = user_profile.update_from_user_events(
-                es, user_events, raw_logs_by_user)
+                es, user_events, raw_logs_by_user_window)
             log.info(f"    프로필 생성: {up['created']} / "
                      f"업데이트: {up['updated']} / 실패: {up['failed']}")
             ra = user_profile.record_alerts_from_risk_docs(
