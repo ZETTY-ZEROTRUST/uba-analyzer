@@ -1,0 +1,29 @@
+{
+  "target_type": "ip",
+  "target_id": "203.0.113.47",
+  "total_score": 88,
+  "p99_today": 62,
+  "dominant_factor": "F9",
+  "attacker_level": "L4",
+  "data_exfiltration_detected": false,
+  "window": "5분",
+  "factor_scores": {
+    "F2": 4, "F3": 31, "F6": 12, "F7": 8, "F9": 84, "F_Resp": 9, "F_Cum": 3
+  },
+  "window_size_f9": "5m",
+  "soft_cap_applied": false,
+  "ip_context": {
+    "ip_class": "cgnat_kr",
+    "ip_asn": "AS9644",
+    "ip_org": "SK Telecom",
+    "ip_country": "KR",
+    "is_nat_whitelisted": false
+  },
+  "sample_logs": [
+    {"@timestamp": "2026-05-17T05:30:01Z", "sub": "1400021123", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2310},
+    {"@timestamp": "2026-05-17T05:30:04Z", "sub": "1400021124", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2290},
+    {"@timestamp": "2026-05-17T05:30:09Z", "sub": "1400021125", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2415},
+    {"@timestamp": "2026-05-17T05:30:14Z", "sub": "1400021126", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2188},
+    {"@timestamp": "2026-05-17T05:30:19Z", "sub": "1400021127", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2502}
+  ]
+}

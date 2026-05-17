@@ -5,7 +5,9 @@ description = "ZETI UBA — Elasticsearch MCP server (stdio)"
 requires-python = ">=3.10"
 dependencies = [
     "fastmcp>=2.0.0",
-    "elasticsearch>=8.13.0",
+    # Pinned <9: the ZETI ELK cluster is Elasticsearch 8.19; a 9.x client
+    # sends an incompatible media-type header and gets HTTP 400.
+    "elasticsearch>=8.13.0,<9",
 ]
 
 [project.scripts]
