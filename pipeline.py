@@ -25,6 +25,7 @@ import ip_aggregator
 import baseline_store
 import risk_scorer
 import es_writer
+import user_profile
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -75,6 +76,30 @@ def run(hours, write=True, rebuild_baseline=True):
             log.info(f"    uba-baseline: {r2['saved']} 저장 ({r2['index']})")
         r3 = risk_scorer.write_risk_scores(risk_docs, es)
         log.info(f"    uba-risk-scores: {r3['saved']} 저장 ({r3['index']})")
+
+        # ─────────────────────────────────────────────────────────────
+        # Phase 2.5 — 사용자별 누적 프로필 (uba-user-profiles)
+        # ─────────────────────────────────────────────────────────────
+        # event_aggregator 출력만 갖고도 기본 카운트는 채워지지만, raw_logs 를 함께
+        # 주면 JWT 메타(acr/scopes/aud) / 시간대 / endpoint 분포 / IP 이력까지 학습.
+        log.info("[6] 사용자 프로필 누적 (uba-user-profiles)")
+        try:
+            raw_logs_by_user = {}
+            for g in logs:
+                uid = g.get("user_id")
+                if uid:
+                    raw_logs_by_user.setdefault(uid, []).append(g)
+            up = user_profile.update_from_user_events(
+                es, user_events, raw_logs_by_user)
+            log.info(f"    프로필 생성: {up['created']} / "
+                     f"업데이트: {up['updated']} / 실패: {up['failed']}")
+            ra = user_profile.record_alerts_from_risk_docs(
+                es, risk_docs, threshold=risk_scorer.ALERT_THRESHOLD)
+            log.info(f"    알람 risk 기록: {ra['recorded']} "
+                     f"(스킵 {ra['skipped']})")
+        except Exception as e:
+            # user_profile 실패해도 메인 파이프라인은 계속 — 신규 모듈이라 보수적.
+            log.warning(f"    user_profile 누적 실패 (계속 진행): {e}")
     else:
         log.info("[5] --dry-run — ES 기록 생략")
 
