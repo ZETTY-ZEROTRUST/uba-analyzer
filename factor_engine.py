@@ -86,12 +86,14 @@ def factor_token_replay(token_replay_meta):
     return 0
 
 
-def factor_ip_user_diversity(unique_subs, ip_class, baseline, window_size):
+def factor_ip_user_diversity(unique_subs, ip_class, baseline, window_size, metric_key=None):
     """IP-사용자다양성 (Override 100) — 2단계: raw 산출 → ip_class soft cap.
 
+    metric_key: baseline 분포 키. None 이면 IP 단위 기본값(ip_user_diversity_{win}).
+                Route B 의 ASN 단위 채점은 "asn_user_diversity_{win}" 을 넘긴다.
     Returns: (score, meta) — meta 는 uba-risk-scores.ip_user_diversity_meta 용.
     """
-    dist = baseline.get(f"ip_user_diversity_{window_size}")
+    dist = baseline.get(metric_key or f"ip_user_diversity_{window_size}")
     z = _zscore(unique_subs, dist)
     cold = z is None
 
@@ -230,25 +232,31 @@ def score_user_window(user_event, baseline, pii_signal=None):
 
 
 def score_ip_window(ip_event, baseline):
-    """IP-윈도우 집계 doc → ip risk doc.
+    """IP-윈도우 또는 ASN-윈도우 집계 doc → risk doc.
 
-    채점 팩터: ip_user_diversity / cumulative_exfil (24h 윈도우만).
+    target_type="ip"  → ip_user_diversity (+ cumulative_exfil 24h). S4/S6.
+    target_type="asn" → ip_user_diversity (ASN 단위 baseline). Route B — 분산
+                        enumeration(S5/S5b). cumulative_exfil 은 IP 24h 누적 전용
+                        이라 ASN 에는 적용 안 함 (baseline 단위 불일치).
     token_violation/request_burst/token_replay/response_size_burst 는 user 단위라 0.
     """
+    target_type = ip_event.get("target_type", "ip")
+    metric_prefix = "asn_user_diversity" if target_type == "asn" else "ip_user_diversity"
     fb = _blank_breakdown()
     iud, iud_meta = factor_ip_user_diversity(
         ip_event["unique_subs_count"], ip_event.get("ip_class"),
-        baseline, ip_event["window_size"])
+        baseline, ip_event["window_size"],
+        metric_key=f"{metric_prefix}_{ip_event['window_size']}")
     fb["ip_user_diversity"] = iud
-    # cumulative_exfil 은 24h 누적 — 24h 윈도우에서만 의미
-    if ip_event["window_size"] == "24h":
+    # cumulative_exfil 은 IP 24h 누적 전용 — ASN 단위는 baseline 불일치라 제외
+    if ip_event["window_size"] == "24h" and target_type != "asn":
         fb["cumulative_exfil"] = factor_cumulative_exfil(
             ip_event["response_bytes_total"], baseline)
 
     total, dominant = combine(fb)
     return {
         "@timestamp": ip_event["window_start"],
-        "target_type": "ip",
+        "target_type": target_type,
         "target_id": ip_event["target_id"],
         "window_start": ip_event["window_start"],
         "window_size": ip_event["window_size"],
@@ -275,6 +283,7 @@ if __name__ == "__main__":
         "cumulative_exfil": {"mean": 40000.0, "std": 12000.0, "sample_count": 150, "cold_start": False},
         "ip_user_diversity_5min": {"sample_count": 32, "cold_start": True},
         "ip_user_diversity_24h": {"sample_count": 32, "cold_start": True},
+        "asn_user_diversity_5min": {"sample_count": 12, "cold_start": True},
     }
 
     print("=== 정상 user-윈도우 ===")
@@ -308,6 +317,19 @@ if __name__ == "__main__":
     assert s4["total_score"] == 70, "S4 cloud cold-start raw fallback (unique_subs>=10 → 70)"
     assert s4["dominant_factor"] == "ip_user_diversity"
 
+    print("=== S5/S5b 분산 enumeration ASN-윈도우 (Route B, unknown, unique_subs 40) ===")
+    s5 = score_ip_window({
+        "target_type": "asn", "target_id": "AS20473", "window_start": "t",
+        "window_size": "5min", "unique_subs_count": 40, "response_bytes_total": 96000,
+        "ip_class": "unknown", "ip_asn": "AS20473", "ip_org": "Vultr",
+        "ip_country": "US", "is_nat_whitelisted": False,
+    }, baseline)
+    print(f"  total={s5['total_score']} dominant={s5['dominant_factor']} "
+          f"target_type={s5['target_type']} raw={s5['ip_user_diversity_meta']['raw_score']}")
+    assert s5["target_type"] == "asn", "ASN risk doc target_type 유지"
+    assert s5["total_score"] == 70, "S5 ASN cold-start raw fallback (unique_subs>=10 → 70)"
+    assert s5["dominant_factor"] == "ip_user_diversity"
+
     print("=== S7 카페 NAT ip-윈도우 (cgnat_kr, unique_subs 50 → soft cap) ===")
     s7 = score_ip_window({
         "target_id": "175.197.50.12", "window_start": "t", "window_size": "5min",
@@ -318,4 +340,4 @@ if __name__ == "__main__":
           f"capped={s7['ip_user_diversity_meta']['capped']}")
     assert s7["total_score"] == 30 and s7["ip_user_diversity_meta"]["capped"], "S7 cgnat_kr soft cap 30"
 
-    print("\n계약 점검 통과 ✅ (정상 0 / S2 token_replay 80 / S4 ip_user_diversity 70 / S7 soft cap 30)")
+    print("\n계약 점검 통과 ✅ (정상 0 / S2 80 / S4 70 / S5·S5b ASN 70 / S7 soft cap 30)")

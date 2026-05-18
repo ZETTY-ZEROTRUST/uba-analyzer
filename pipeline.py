@@ -49,26 +49,27 @@ def run(hours, write=True, rebuild_baseline=True):
         log.warning("로그 0건 — 종료")
         return
 
-    log.info("[2] 집계 (user / IP 양방향)")
+    log.info("[2] 집계 (user / IP / ASN)")
     user_events = event_aggregator.aggregate_user_events(logs)
     ip_events = ip_aggregator.aggregate_ip_events(logs)
-    log.info(f"    user 윈도우 {len(user_events)} / IP 윈도우 {len(ip_events)}")
+    asn_events = ip_aggregator.aggregate_asn_events(logs)   # Route B — 분산 enumeration
+    log.info(f"    user {len(user_events)} / IP {len(ip_events)} / ASN {len(asn_events)}")
 
     log.info("[3] baseline 산출")
-    baseline_docs = baseline_store.compute_baseline(user_events, ip_events)
+    baseline_docs = baseline_store.compute_baseline(user_events, ip_events, asn_events)
     baseline = baseline_store.index_baseline(baseline_docs)
     rb = baseline.get("request_burst", {})
     log.info(f"    request_burst: mean={rb.get('mean')} n={rb.get('sample_count')} "
              f"cold_start={rb.get('cold_start')}")
 
     log.info("[4] 7 팩터 채점")
-    risk_docs = risk_scorer.score_all(user_events, ip_events, baseline)
+    risk_docs = risk_scorer.score_all(user_events, ip_events, baseline, asn_events=asn_events)
     summary = risk_scorer.summarize(risk_docs)
     log.info(f"    {summary}")
 
     if write:
         log.info("[5] ES 기록")
-        r1 = es_writer.write_docs(user_events + ip_events, "uba-events", es)
+        r1 = es_writer.write_docs(user_events + ip_events + asn_events, "uba-events", es)
         log.info(f"    uba-events: {r1['saved']} 저장 ({r1['index']})")
         if rebuild_baseline:
             r2 = es_writer.write_docs(baseline_docs, "uba-baseline", es)

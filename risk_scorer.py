@@ -20,7 +20,7 @@ from es_writer import write_docs
 ALERT_THRESHOLD = 50   # PROGRESS: 상위 위험 = score >= max(p99_today, 50)
 
 
-def score_all(user_events, ip_events, baseline, pii_signals=None):
+def score_all(user_events, ip_events, baseline, pii_signals=None, asn_events=None):
     """집계 doc → 완성 risk doc 리스트 (uba-risk-scores 색인용).
 
     Args:
@@ -28,6 +28,7 @@ def score_all(user_events, ip_events, baseline, pii_signals=None):
         ip_events: ip_aggregator.aggregate_ip_events() 출력.
         baseline: baseline_store.index_baseline() 출력 ({metric: dist}).
         pii_signals: {user_id: pii_signal_dict} — backend AOP 연동 시. 없으면 None.
+        asn_events: ip_aggregator.aggregate_asn_events() 출력 (Route B). 없으면 [].
 
     Returns:
         list of dict — attacker_level / data_exfiltration_detected 까지 채워진 risk doc.
@@ -40,6 +41,11 @@ def score_all(user_events, ip_events, baseline, pii_signals=None):
         docs.append(rd)
     for ie in ip_events:
         rd = factor_engine.score_ip_window(ie, baseline)
+        alc.classify(rd)
+        docs.append(rd)
+    # ASN-윈도우 (Route B) — score_ip_window 이 target_type 으로 분기 채점
+    for ae in (asn_events or []):
+        rd = factor_engine.score_ip_window(ae, baseline)
         alc.classify(rd)
         docs.append(rd)
     return docs
@@ -74,6 +80,7 @@ if __name__ == "__main__":
         "cumulative_exfil": {"mean": 40000.0, "std": 12000.0, "sample_count": 150, "cold_start": False},
         "ip_user_diversity_5min": {"sample_count": 32, "cold_start": True},
         "ip_user_diversity_24h": {"sample_count": 32, "cold_start": True},
+        "asn_user_diversity_5min": {"sample_count": 12, "cold_start": True},
     }
     clean_trm = {"jti_count_with_class_crossing": 0, "jti_count_with_country_crossing": 0}
     clean_tv = {"score": 0, "triggered_rules": [], "violating_samples": []}
@@ -105,7 +112,14 @@ if __name__ == "__main__":
          "ip_asn": "AS-X", "ip_org": "?", "ip_country": "US", "is_nat_whitelisted": False},
     ]
 
-    docs = score_all(user_events, ip_events, baseline)
+    asn_events = [
+        # S5/S5b 분산 enumeration — IP 흩었지만 한 ASN(AS20473)에 sub 40명 재집결
+        {"target_type": "asn", "target_id": "AS20473", "window_start": "t4",
+         "window_size": "5min", "unique_subs_count": 40, "response_bytes_total": 96000,
+         "ip_class": "unknown", "ip_asn": "AS20473", "ip_org": "Vultr",
+         "ip_country": "US", "is_nat_whitelisted": False},
+    ]
+    docs = score_all(user_events, ip_events, baseline, asn_events=asn_events)
     print("=== risk doc 채점 결과 ===")
     for d in docs:
         print(f"  [{d['target_type']:4} {d['target_id']:16}] score={d['total_score']:3} "
@@ -119,4 +133,7 @@ if __name__ == "__main__":
     assert by_id["13.124.0.9"]["dominant_factor"] == "ip_user_diversity"
     assert by_id["13.124.0.9"]["attacker_level"] == "L4"
     assert by_id["203.0.113.7"]["attacker_level"] == "L4(Slow & Low)"
-    print("\n계약 점검 통과 ✅ (정상 L0 / S2 L2 / S4 L4 / S6 L4 Slow&Low)")
+    assert by_id["AS20473"]["total_score"] == 70, "S5/S5b ASN — 분산 enumeration 탐지"
+    assert by_id["AS20473"]["dominant_factor"] == "ip_user_diversity"
+    assert by_id["AS20473"]["attacker_level"] == "L4"
+    print("\n계약 점검 통과 ✅ (정상 L0 / S2 L2 / S4 L4 / S5·S5b ASN L4 / S6 Slow&Low)")

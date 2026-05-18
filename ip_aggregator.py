@@ -43,12 +43,39 @@ def aggregate_ip_events(logs):
             win = (ep // secs) * secs
             buckets[(ip, win)].append(g)
         for (ip, win), grp in buckets.items():
-            docs.append(_build_ip_doc(ip, win, label, grp))
+            docs.append(_build_target_doc("ip", ip, win, label, grp))
     return docs
 
 
-def _build_ip_doc(ip, window_start, window_size, group):
-    """한 (IP, 윈도우) 버킷 → 집계 doc."""
+def aggregate_asn_events(logs):
+    """정규화 로그 → ASN-윈도우 집계 doc 리스트 (Route B — 분산 enumeration 탐지).
+
+    IP 분산 공격(S5/S5b)은 개별 IP 의 unique_subs 를 희석해 ip_user_diversity 를
+    회피한다. 공격 IP 들이 속한 ASN 으로 다시 묶으면 다양성이 재집결한다.
+      - cgnat_kr(통신사 ASN): 정상 사용자 수백만이 공유 → ASN 집계가 무의미하고
+        오탐만 낸다 → 제외 (KT 200명이 자기 정보 조회해도 ASN doc 자체가 안 생김).
+      - ip_asn 미상(null): 분류 불가 잡탕 → 제외.
+    sub 가 순차냐 랜덤이냐는 무관(unique 개수만 셈) — S5·S5b 를 동일하게 잡는다.
+    """
+    docs = []
+    for label, secs in WINDOWS.items():
+        buckets = defaultdict(list)
+        for g in logs:
+            asn = g.get("ip_asn")
+            ep = g.get("receive_epoch")
+            if not asn or ep is None:
+                continue
+            if g.get("ip_class") == "cgnat_kr":   # 통신사 ASN 제외 (오탐 방지)
+                continue
+            win = (ep // secs) * secs
+            buckets[(asn, win)].append(g)
+        for (asn, win), grp in buckets.items():
+            docs.append(_build_target_doc("asn", asn, win, label, grp))
+    return docs
+
+
+def _build_target_doc(target_type, target_id, window_start, window_size, group):
+    """한 (타깃, 윈도우) 버킷 → 집계 doc. 타깃 = IP(client_ip) 또는 ASN(ip_asn)."""
     sub_set = sorted({g["user_id"] for g in group if g.get("user_id")})
     ua_set = sorted({g["user_agent"] for g in group if g.get("user_agent")})
     methods = sorted({g["method"] for g in group if g.get("method")})
@@ -62,8 +89,8 @@ def _build_ip_doc(ip, window_start, window_size, group):
     return {
         # uba-events 매핑 dynamic:strict — target_type + target_id 일반 키 (user/ip 공통).
         "@timestamp": window_iso,
-        "target_type": "ip",
-        "target_id": ip,
+        "target_type": target_type,
+        "target_id": target_id,
         "window_start": window_iso,
         "window_size": window_size,
 
@@ -121,3 +148,38 @@ if __name__ == "__main__":
     assert normal_5m["unique_subs_count"] == 1, "정상 unique_subs=1"
     assert len(docs) == 6, "IP 2개 × 윈도우 3개 = 6 doc"
     print("\n계약 점검 통과 ✅ (S4 unique_subs=30 / 정상=1)")
+
+    # === Route B — ASN 집계 검증 (S5/S5b 탐지 + KT 정상 FP 없음) ===
+    print("\n=== Route B: ASN 집계 ===")
+    # S5/S5b: 20개 분산 IP, 전부 같은 ASN(AS20473 Vultr, unknown class), 40명 sub
+    s5_logs = [
+        {**base, "client_ip": f"45.32.10.{i % 20}", "ip_class": "unknown",
+         "ip_asn": "AS20473", "receive_epoch": WIN0 + i * 5,
+         "uri": f"/api/addresses/15000{i:04d}", "user_id": f"15000{i:04d}",
+         "user_agent": "python-requests/2.31", "baseline_eligible": True}
+        for i in range(40)
+    ]
+    # 정상: KT 200명이 각자 자기 정보 조회 (cgnat_kr → ASN 집계 제외 대상)
+    kt_logs = [
+        {**base, "client_ip": f"118.235.0.{i % 256}", "ip_class": "cgnat_kr",
+         "ip_asn": "AS4766", "ip_country": "KR", "receive_epoch": WIN0 + i,
+         "uri": "/api/products", "user_id": f"14000{i:04d}",
+         "user_agent": "Mozilla/5.0", "baseline_eligible": True}
+        for i in range(200)
+    ]
+
+    asn_docs = aggregate_asn_events(s5_logs)
+    s5_5m = next(d for d in asn_docs
+                 if d["target_id"] == "AS20473" and d["window_size"] == "5min")
+    print(f"  S5 분산공격(IP 20개) → ASN doc: target_type={s5_5m['target_type']} "
+          f"target={s5_5m['target_id']} unique_subs={s5_5m['unique_subs_count']}")
+    assert s5_5m["target_type"] == "asn", "ASN doc target_type=asn"
+    assert s5_5m["unique_subs_count"] == 40, "S5 — IP 20개로 흩어도 ASN 1개로 40명 재집결"
+
+    # ★ B6 — FP 검증: KT 200명 정상 → cgnat_kr 이라 ASN doc 자체가 0건
+    kt_asn_docs = aggregate_asn_events(kt_logs)
+    print(f"  KT 200명 정상 → ASN doc {len(kt_asn_docs)}건 (cgnat_kr 제외 → 채점 대상 없음)")
+    assert kt_asn_docs == [], "B6 FP 검증: cgnat_kr 은 ASN 집계 제외 → doc 0건"
+
+    print("\nRoute B 점검 통과 ✅ "
+          "(S5 분산 → ASN 재집결 unique_subs=40 / KT 200명 → ASN doc 0 = FP 없음)")

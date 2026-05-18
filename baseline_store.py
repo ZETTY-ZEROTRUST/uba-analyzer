@@ -53,12 +53,13 @@ def _eligible(doc, excluded):
     return doc.get("target_id") not in excluded
 
 
-def compute_baseline(user_events, ip_events, excluded_targets=None):
-    """user/IP 집계 doc → metric별 분포 baseline doc 리스트.
+def compute_baseline(user_events, ip_events, asn_events=None, excluded_targets=None):
+    """user/IP/ASN 집계 doc → metric별 분포 baseline doc 리스트.
 
     Args:
         user_events: event_aggregator.aggregate_user_events() 출력.
         ip_events: ip_aggregator.aggregate_ip_events() 출력.
+        asn_events: ip_aggregator.aggregate_asn_events() 출력 (Route B). 없으면 [].
         excluded_targets: 직전 라운드 점수 70+ 타깃 id set (bootstrap 시 빈 set).
 
     Returns:
@@ -69,6 +70,7 @@ def compute_baseline(user_events, ip_events, excluded_targets=None):
 
     u_ok = [d for d in user_events if _eligible(d, excluded)]
     ip_ok = [d for d in ip_events if _eligible(d, excluded)]
+    asn_ok = [d for d in (asn_events or []) if _eligible(d, excluded)]
 
     metrics = {
         # request_burst: user-윈도우 요청 수 분포
@@ -79,10 +81,15 @@ def compute_baseline(user_events, ip_events, excluded_targets=None):
         "cumulative_exfil": [d["response_bytes_total"]
                              for d in ip_ok if d["window_size"] == "24h"],
     }
-    # ip_user_diversity: IP-윈도우 unique_subs — 윈도우별로 분포가 다르다
+    # ip_user_diversity: IP-윈도우 unique_subs — 윈도우별로 분포가 다르다.
+    # asn_user_diversity: ASN-윈도우 unique_subs (Route B) — ASN 은 IP 보다 많은
+    #   sub 를 보므로 IP 와 분포가 다르다 → 별도 metric 으로 분리한다.
     for win in ("5min", "1h", "24h"):
         metrics[f"ip_user_diversity_{win}"] = [
             d["unique_subs_count"] for d in ip_ok if d["window_size"] == win
+        ]
+        metrics[f"asn_user_diversity_{win}"] = [
+            d["unique_subs_count"] for d in asn_ok if d["window_size"] == win
         ]
 
     docs = []
@@ -124,7 +131,15 @@ if __name__ == "__main__":
         for i in range(150)
     ]
 
-    base = compute_baseline(user_events, ip_events, excluded_targets={"attacker"})
+    # ASN 24h 집계 (Route B) — 정상 비-cgnat ASN 20개
+    asn_events = [
+        {"target_id": f"AS{1000 + i}", "window_size": "24h", "is_baseline_eligible": True,
+         "unique_subs_count": random.randint(2, 8),
+         "response_bytes_total": max(0, int(random.gauss(30000, 9000)))}
+        for i in range(20)
+    ]
+    base = compute_baseline(user_events, ip_events, asn_events,
+                            excluded_targets={"attacker"})
     idx = index_baseline(base)
 
     print("=== baseline 분포 ===")
@@ -138,4 +153,6 @@ if __name__ == "__main__":
     assert idx["ip_user_diversity_24h"]["cold_start"] is False, "150 samples >= 100 → cold_start False"
     assert idx["ip_user_diversity_5min"]["sample_count"] == 0, "5min IP 집계 없음 → cold_start"
     assert idx["ip_user_diversity_5min"]["cold_start"] is True, "0 samples → cold_start True"
-    print("\n계약 점검 통과 ✅ (공격 user baseline 제외 + cold_start 분기 확인)")
+    assert idx["asn_user_diversity_24h"]["sample_count"] == 20, "ASN 24h baseline 20 samples"
+    assert idx["asn_user_diversity_5min"]["sample_count"] == 0, "ASN 5min 집계 없음"
+    print("\n계약 점검 통과 ✅ (공격 user baseline 제외 + cold_start + ASN baseline 분리)")
