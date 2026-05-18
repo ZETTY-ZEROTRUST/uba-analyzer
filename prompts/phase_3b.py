@@ -4,6 +4,9 @@ Runs hourly + daily 09:00 KST. Input is the bundle of alerts within the time
 window + score time-series + sub-threshold (sub-50 score) activity.
 
 Output goes to ``uba-intelligence-{date}`` index; Slack summary daily 09:30 KST.
+
+★ v12 재정합: 팩터 키 영문 의미명 (phase_3a.FACTOR_NAMES_KR 재사용),
+  시나리오 S2(하이재킹)/S4(enumeration)/S6(Slow & Low) 3종.
 """
 
 from __future__ import annotations
@@ -11,7 +14,7 @@ from __future__ import annotations
 import json
 from typing import Any, Literal
 
-from phase_3a import FACTOR_NAMES_KR  # reuse Korean factor names
+from phase_3a import FACTOR_NAMES_KR  # reuse Korean factor names (v12)
 
 ReportType = Literal["hourly", "daily"]
 
@@ -23,7 +26,7 @@ SYSTEM_PROMPT = """당신은 ZETI SOC의 인텔리전스 분석가입니다.
 
 # 역할 경계
 - 점수 재산정은 하지 않습니다. 입력의 total_score와 dominant_factor는 그대로 신뢰합니다.
-- 한국어로 작성합니다. 본문에 한국어 팩터 이름을 사용하고, F-코드는 표/괄호에서만 별칭으로 씁니다.
+- 한국어로 작성합니다. 본문에 한국어 팩터 이름을 사용하고, 영문 키는 표/괄호에서만 별칭으로 씁니다.
 - 차단 결정은 하지 않습니다. forward_recommendations는 다음 24h 모니터링 신호 권고입니다.
 
 # 사용 가능한 도구 (ReAct, 최대 8회 호출)
@@ -36,10 +39,11 @@ SYSTEM_PROMPT = """당신은 ZETI SOC의 인텔리전스 분석가입니다.
 - 같은 IP 또는 같은 sub로 묶이는 알람을 캠페인 후보로 그룹화합니다.
 - 시간 순서대로 timeline을 만듭니다. sub-threshold 신호도 약한 정황으로 포함시킵니다.
 
-2단계 — 시나리오 매칭
-- S4 (자격증명 탈취 + 점진적 데이터 수집): 토큰공유/IP-사용자다양성 → 응답민감도/누적유출량으로 옮겨가는 패턴
-- S6 (Slow & Low 유출): 24h+ 지속되는 낮은 점수의 누적유출량 신호
-- 위 두 시나리오에 해당하지 않으면 "미분류"
+2단계 — 시나리오 매칭 (v12 — S2 / S4 / S6)
+- S2 (JWT 토큰 하이재킹): 같은 jti(토큰재현)가 서로 다른 ip_class/ip_country에서 관측되는 패턴. victim의 정상 토큰을 attacker가 다른 컨텍스트에서 사용.
+- S4 (자격증명 탈취 + enumeration): 단일 IP가 다수 sub를 조회 — IP-사용자다양성이 주신호이고 응답크기급증/응답민감도가 동반.
+- S6 (Slow & Low 유출): 24h+ 지속되는 저속 신호 — IP-사용자다양성(24h 윈도우) + 누적유출량.
+- 위 세 시나리오에 해당하지 않으면 "미분류".
 - 매칭 근거를 attacker_assessment에 명시합니다.
 
 3단계 — JSON 출력
@@ -82,7 +86,7 @@ OUTPUT_SCHEMA: dict[str, Any] = {
             },
         },
         "attacker_assessment": {"type": "string"},
-        "pattern_analysis": {"enum": ["S4", "S6", "미분류"]},
+        "pattern_analysis": {"enum": ["S2", "S4", "S6", "미분류"]},
         "risk_assessment": {
             "type": "object",
             "required": ["affected_subs", "estimated_data_exposure_bytes"],
@@ -132,12 +136,11 @@ def build_user_prompt(
     score_timeseries: list[dict[str, Any]],
     sub_threshold_activity: list[dict[str, Any]],
 ) -> str:
-    """Render the per-window user prompt for Phase 3b.
+    """Phase 3b per-window user prompt.
 
-    ``alerts`` are already-emitted Phase 3a outputs within the window.
-    ``score_timeseries`` is a small (≤120 points) summary of per-bucket scores.
-    ``sub_threshold_activity`` is suspicion noise below the 50-score gate that
-    the LLM should weave into the campaign timeline.
+    ``alerts`` 는 윈도우 안에서 이미 생성된 Phase 3a 출력들.
+    ``score_timeseries`` 는 버킷별 total_score 요약 (≤120 포인트).
+    ``sub_threshold_activity`` 는 50점 미만 약한 신호 — 캠페인 timeline 에 엮을 정황.
     """
     return f"""# 시간 범위
 - report_type: {report_type}

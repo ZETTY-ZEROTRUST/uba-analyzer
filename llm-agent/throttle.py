@@ -4,7 +4,7 @@ Spec (project memory: project-zeti-uba):
     - Phase 3a runs only when ``total_score >= max(p99_today, 50)``.
     - Throttled per target to 1/hour, with THREE exceptions that fire anyway:
         1. score jump ≥ 20 vs the target's last analysed score,
-        2. an override factor (F9 IP-사용자다양성 / F_Resp 응답민감도) newly fired,
+        2. an override factor (ip_user_diversity / response_sensitivity) newly fired,
         3. ``data_exfiltration_detected`` flipping from false → true.
     - Global cost guard: at most 10 LLM calls per rolling 5 minutes.
 
@@ -25,7 +25,7 @@ WINDOW_COST = 300       # cost-guard rolling window: 5 minutes
 COST_MAX = 10           # max LLM calls per WINDOW_COST
 SCORE_JUMP = 20         # exception 1 threshold
 SCORE_FLOOR_MIN = 50    # floor never drops below this
-OVERRIDE_FACTORS = {"F9", "F_Resp"}
+OVERRIDE_FACTORS = {"ip_user_diversity", "response_sensitivity"}   # v12 영문 의미명 키
 
 
 class TriggerGate:

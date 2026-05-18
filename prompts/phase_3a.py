@@ -1,10 +1,12 @@
 """ZETI UBA — Phase 3a prompt (single-alert realtime, claude-haiku-4-5).
 
-Spec contract (project memory: project-zeti-uba):
+Spec contract (v12 재정합):
     - LLM does NOT compute scores or attacker_level — those come from factor_engine.
     - LLM produces incident report JSON, MITRE/CVE mappings (real IDs only),
-      NAT judgment when F9 dominant, recommended actions.
-    - Korean factor names in prose; F-codes as aliases inside the data table only.
+      NAT judgment when ip_user_diversity dominant, recommended actions.
+    - Korean factor names in prose; English snake_case keys as table-only aliases.
+    - ★ v12: 팩터 키는 영문 의미명 7종 (구 F-코드 F2/F6/F9 폐기).
+      입력 alert 은 risk_doc_adapter 가 uba-risk-scores risk doc 에서 변환한 것.
 
 Usage:
     from phase_3a import SYSTEM_PROMPT, build_user_prompt, OUTPUT_SCHEMA
@@ -23,19 +25,19 @@ from __future__ import annotations
 import json
 from typing import Any
 
-# --- Korean factor names (primary) + F-code alias.
-# LLM prose MUST use the Korean name; F-codes are table-only aliases.
+# --- v12 영문 의미명 팩터 키 → 한국어 이름.
+# LLM 본문은 한국어 이름 사용, 영문 키는 표 안에서만 별칭.
 FACTOR_NAMES_KR: dict[str, str] = {
-    "F2": "토큰규격위반",
-    "F3": "요청수급증",
-    "F6": "토큰공유",
-    "F7": "응답크기급증",
-    "F9": "IP-사용자다양성",
-    "F_Resp": "응답민감도",
-    "F_Cum": "누적유출량",
+    "token_violation": "토큰규격위반",
+    "request_burst": "요청수급증",
+    "token_replay": "토큰재현(Replay)",
+    "response_size_burst": "응답크기급증",
+    "ip_user_diversity": "IP-사용자다양성",
+    "response_sensitivity": "응답민감도",
+    "cumulative_exfil": "누적유출량",
 }
-# Factors that bypass throttle and require special handling in Phase 3a.
-OVERRIDE_FACTORS = {"F9", "F_Resp"}
+# Override 팩터 — throttle 우회, Phase 3a 에서 특별 처리.
+OVERRIDE_FACTORS = {"ip_user_diversity", "response_sensitivity"}
 
 
 SYSTEM_PROMPT = """당신은 ZETI SOC의 인시던트 분석가입니다.
@@ -43,7 +45,7 @@ SYSTEM_PROMPT = """당신은 ZETI SOC의 인시던트 분석가입니다.
 # 역할 경계 (반드시 지킬 것)
 - 점수 산출은 하지 않습니다. 모든 팩터 점수, total_score, dominant_factor, attacker_level, data_exfiltration_detected는 factor_engine이 이미 계산해서 입력으로 줍니다.
 - 차단/허용 결정은 하지 않습니다. recommended_actions에 권고만 적습니다.
-- 한국어로 작성합니다. 본문에는 한국어 팩터 이름(예: "IP-사용자다양성")을 직접 사용하고, F-코드는 표 안에서만 별칭으로 씁니다.
+- 한국어로 작성합니다. 본문에는 한국어 팩터 이름(예: "IP-사용자다양성")을 직접 사용하고, 영문 키는 표 안에서만 별칭으로 씁니다.
 
 # 사용 가능한 도구 (ReAct, 최대 5회 호출)
 1. query_elasticsearch(index, query, time_range, size)
@@ -51,31 +53,32 @@ SYSTEM_PROMPT = """당신은 ZETI SOC의 인시던트 분석가입니다.
 2. search_mitre_attack(keywords)
    - 로컬 캐시된 mitre-attack 인덱스에서 technique/sub-technique를 검색합니다.
 3. search_nvd_cve(query, cvss_min)
-   - NVD에서 관련 CVE를 검색합니다. 6개 핵심 CVE는 로컬 캐시 우선.
+   - NVD에서 관련 CVE를 검색합니다. 핵심 CVE는 로컬 캐시 우선.
 
 # 4단계 분석 절차
 1단계 — 컨텍스트 보강 (선택적)
-- dominant_factor가 F9 (IP-사용자다양성)이고 ip_class가 cgnat_kr 또는 unknown일 때 → 해당 IP의 직전 24h UA 다양성/시간 분포/baseline 조회.
-- dominant_factor가 F_Resp (응답민감도)일 때 → target의 직전 1h endpoint별 호출 패턴 조회.
-- dominant_factor가 F_Cum (누적유출량)일 때 → target의 직전 3d 응답 바이트 시계열 조회.
+- dominant_factor가 ip_user_diversity (IP-사용자다양성)이고 ip_class가 cgnat_kr 또는 unknown일 때 → 해당 IP의 직전 24h UA 다양성/시간 분포/baseline 조회.
+- dominant_factor가 response_sensitivity (응답민감도)일 때 → target의 직전 1h endpoint별 호출 패턴 조회.
+- dominant_factor가 cumulative_exfil (누적유출량)일 때 → target의 직전 3d 응답 바이트 시계열 조회.
+- dominant_factor가 token_replay (토큰재현)일 때 → 해당 jti가 관측된 ip_class/ip_country 집합 조회.
 - 그 외 dominant_factor에서는 굳이 추가 조회하지 마세요(latency/비용 가드).
 
 2단계 — MITRE / CVE 매핑
 - search_mitre_attack 키워드 가이드:
-  · F9(IP-사용자다양성) → "credential access", "T1606", "T1110"
-  · F_Resp(응답민감도) → "exfiltration", "T1041", "collection"
-  · F_Cum(누적유출량) → "exfiltration over c2", "T1041", "T1567"
-  · F2(토큰규격위반) → "valid accounts", "T1078", "token"
-  · F3(요청수급증) → "brute force", "T1110", "scanning"
-  · F6(토큰공유) → "T1550", "use alternate authentication material"
-  · F7(응답크기급증) → "T1530", "data from cloud storage object"
+  · ip_user_diversity(IP-사용자다양성) → "credential access", "T1606", "T1110"
+  · response_sensitivity(응답민감도) → "exfiltration", "T1041", "collection"
+  · cumulative_exfil(누적유출량) → "exfiltration over c2", "T1041", "T1567"
+  · token_violation(토큰규격위반) → "valid accounts", "T1078", "modify authentication process"
+  · request_burst(요청수급증) → "brute force", "T1110", "scanning"
+  · token_replay(토큰재현) → "T1550", "use alternate authentication material", "T1606"
+  · response_size_burst(응답크기급증) → "T1530", "data from cloud storage object"
 - search_nvd_cve 호출 시 cvss_min=7.0 기본, dominant_factor 키워드로 검색.
 - 검색 결과에 없는 ID는 절대 만들어내지 않습니다.
 
 3단계 — JSON 출력
 - 반드시 아래 OUTPUT_SCHEMA(키와 타입)와 동일한 구조의 JSON 하나만 출력합니다.
 - behavior_analysis: 3~5줄. 관리자가 30초 안에 상황 파악 가능하게. 본문에 한국어 팩터 이름 사용.
-- nat_judgment.applicable: dominant_factor == F9(IP-사용자다양성)일 때만 true. 그 외에는 false이고 verdict는 "n/a".
+- nat_judgment.applicable: dominant_factor == ip_user_diversity(IP-사용자다양성)일 때만 true. 그 외에는 false이고 verdict는 "n/a".
 - similar_cases는 실제 알려진 사고만(예: 쿠팡 2025-06 사고 등). 모르면 빈 배열.
 
 4단계 — 자가 검증
@@ -170,28 +173,30 @@ OUTPUT_SCHEMA: dict[str, Any] = {
 }
 
 
-def _factor_table(factor_scores: dict[str, float], window_size_f9: str | None,
-                  soft_cap_applied: bool) -> str:
+def _factor_table(factor_breakdown: dict[str, float], window: str | None,
+                  iud_meta: dict[str, Any] | None) -> str:
+    """7 팩터 점수 표. ip_user_diversity 행에는 윈도우/soft cap 메타를 덧붙인다."""
     lines = []
-    for code, kr in FACTOR_NAMES_KR.items():
-        score = factor_scores.get(code, 0)
+    for key, kr in FACTOR_NAMES_KR.items():
+        score = factor_breakdown.get(key, 0)
         suffix = ""
-        if code == "F9" and window_size_f9:
-            suffix = f"   ← window={window_size_f9}, soft_cap_applied={soft_cap_applied}"
-        lines.append(f"- {kr} ({code}): {score}{suffix}")
+        if key == "ip_user_diversity" and iud_meta:
+            capped = iud_meta.get("capped", False)
+            suffix = f"   ← window={window}, soft_cap_applied={capped}"
+        lines.append(f"- {kr} ({key}): {score}{suffix}")
     return "\n".join(lines)
 
 
 def build_user_prompt(alert: dict[str, Any]) -> str:
-    """Render the per-alert user prompt for Phase 3a.
+    """Phase 3a per-alert user prompt.
 
-    ``alert`` is the factor_engine output document. Required keys:
-        target_type, target_id, total_score, dominant_factor (F-code),
-        attacker_level, data_exfiltration_detected, window,
-        factor_scores: {F2, F3, F6, F7, F9, F_Resp, F_Cum},
+    ``alert`` 은 risk_doc_adapter.risk_doc_to_alert() 출력. 필요한 키:
+        target_type, target_id, total_score, dominant_factor (영문 의미명 키),
+        attacker_level, data_exfiltration_detected, window (윈도우 크기),
+        factor_scores: {7 영문 의미명 키: int}  (risk doc 의 factor_breakdown),
         ip_context: {ip_class, ip_asn, ip_org, ip_country, is_nat_whitelisted},
-        window_size_f9 (optional), soft_cap_applied (optional, bool),
-        sample_logs: list of recent log dicts (caller pre-trimmed to ~5 docs).
+        ip_user_diversity_meta (dict | None),
+        sample_logs: 직전 로그 dict 리스트 (호출자가 ~5건으로 미리 trim).
     """
     dom = alert["dominant_factor"]
     dom_kr = FACTOR_NAMES_KR.get(dom, dom)
@@ -208,7 +213,7 @@ def build_user_prompt(alert: dict[str, Any]) -> str:
 - window: {alert['window']}
 
 # 팩터별 점수
-{_factor_table(alert.get('factor_scores', {}), alert.get('window_size_f9'), alert.get('soft_cap_applied', False))}
+{_factor_table(alert.get('factor_scores', {}), alert.get('window'), alert.get('ip_user_diversity_meta'))}
 
 # IP 컨텍스트
 - ip_class: {ip.get('ip_class', 'unknown')}
