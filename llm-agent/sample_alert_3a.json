@@ -1,29 +1,47 @@
 {
+  "_comment": "orchestrator --phase 3a --input 용 smoke test 입력. uba-risk-scores 의 실 risk doc 형태 (S4 enumeration). risk_doc_adapter 가 phase_3a alert 로 변환한다.",
   "target_type": "ip",
-  "target_id": "203.0.113.47",
-  "total_score": 88,
-  "p99_today": 62,
-  "dominant_factor": "F9",
+  "target_id": "13.124.0.9",
+  "window_start": "2026-05-19T05:30:00Z",
+  "window_end": "2026-05-19T05:35:00Z",
+  "window_size": "5min",
+  "total_score": 100,
+  "dominant_factor": "ip_user_diversity",
+  "factor_breakdown": {
+    "token_violation": 0,
+    "request_burst": 15,
+    "token_replay": 0,
+    "response_size_burst": 0,
+    "ip_user_diversity": 100,
+    "response_sensitivity": 0,
+    "cumulative_exfil": 0
+  },
   "attacker_level": "L4",
   "data_exfiltration_detected": false,
-  "window": "5분",
-  "factor_scores": {
-    "F2": 4, "F3": 31, "F6": 12, "F7": 8, "F9": 84, "F_Resp": 9, "F_Cum": 3
+  "suspected_exfiltration": false,
+  "triggered_rules": [],
+  "ip_user_diversity_meta": {
+    "raw_score": 100,
+    "capped": false,
+    "cap_reason": null,
+    "unique_subs_raw": 312,
+    "zscore": 240.5,
+    "baseline_mean": 1.2,
+    "baseline_std": 0.4,
+    "baseline_sample_count": 980,
+    "cold_start_fallback_applied": false
   },
-  "window_size_f9": "5m",
-  "soft_cap_applied": false,
-  "ip_context": {
-    "ip_class": "cgnat_kr",
-    "ip_asn": "AS9644",
-    "ip_org": "SK Telecom",
-    "ip_country": "KR",
-    "is_nat_whitelisted": false
+  "evidence": {
+    "token_replay": {
+      "jti_count_with_class_crossing": 0,
+      "jti_count_with_country_crossing": 0,
+      "violating_samples": []
+    }
   },
-  "sample_logs": [
-    {"@timestamp": "2026-05-17T05:30:01Z", "sub": "1400021123", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2310},
-    {"@timestamp": "2026-05-17T05:30:04Z", "sub": "1400021124", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2290},
-    {"@timestamp": "2026-05-17T05:30:09Z", "sub": "1400021125", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2415},
-    {"@timestamp": "2026-05-17T05:30:14Z", "sub": "1400021126", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2188},
-    {"@timestamp": "2026-05-17T05:30:19Z", "sub": "1400021127", "endpoint": "/api/addresses", "status": 200, "resp_bytes": 2502}
-  ]
+  "ip_class": "cloud",
+  "ip_asn": "AS16509",
+  "ip_org": "Amazon AWS",
+  "ip_country": "US",
+  "is_nat_whitelisted": false,
+  "computed_at": "2026-05-19T05:32:10Z"
 }

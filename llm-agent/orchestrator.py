@@ -46,6 +46,7 @@ import slack_notifier  # noqa: E402
 from anthropic import AsyncAnthropic  # noqa: E402
 from elasticsearch import Elasticsearch  # noqa: E402
 from mcp_router import MCPRouter  # noqa: E402
+from risk_doc_adapter import risk_doc_to_alert  # noqa: E402
 from throttle import TriggerGate  # noqa: E402
 from tools import ALL_TOOLS  # noqa: E402
 
@@ -171,9 +172,16 @@ class ReActOrchestrator:
 
     # -- Phase 3a -----------------------------------------------------------
 
-    async def run_phase_3a(self, alert: dict[str, Any]) -> dict[str, Any] | None:
-        """Analyse a single factor_engine alert. Returns the alert_doc, or None
-        when the trigger gate suppresses it."""
+    async def run_phase_3a(self, risk_doc: dict[str, Any], *,
+                           sample_logs: list[dict[str, Any]] | None = None,
+                           p99_today: float | None = None) -> dict[str, Any] | None:
+        """Analyse one uba-risk-scores risk doc.
+
+        risk_doc_adapter 가 risk doc 을 phase_3a alert 형태로 변환한 뒤
+        gate → ReAct → grounding → uba-alerts 색인 → Slack. trigger gate 가
+        억제하면 None 을 반환한다.
+        """
+        alert = risk_doc_to_alert(risk_doc, sample_logs=sample_logs, p99_today=p99_today)
         decision = self.gate.evaluate(alert)
         logger.info("Phase 3a gate: run=%s — %s", decision["run"], decision["reason"])
         if not decision["run"]:
