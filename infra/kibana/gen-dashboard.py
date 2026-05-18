@@ -207,7 +207,7 @@ objects.append({
         "hits": 0,
         "columns": [
             "target_id", "dominant_factor_korean", "total_score", "score_delta",
-            "throttle_bypass_reason", "mitre_mapping", "llm_report.behavior_analysis",
+            "trigger_reason", "llm_report.mitre_mapping", "llm_report.behavior_analysis",
         ],
         "sort": [["@timestamp", "desc"]],
         "kibanaSavedObjectMeta": {
