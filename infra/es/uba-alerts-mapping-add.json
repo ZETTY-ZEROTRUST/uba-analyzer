@@ -1,0 +1,18 @@
+{
+  "properties": {
+    "llm_report": {
+      "properties": {
+        "behavior_analysis_korean": { "type": "text" }
+      }
+    },
+    "dominant_factor_korean": { "type": "keyword" },
+    "dominant_factor_alias": { "type": "keyword" },
+    "nat_judgment": {
+      "properties": {
+        "applicable": { "type": "boolean" },
+        "verdict": { "type": "keyword" },
+        "rationale": { "type": "text" }
+      }
+    }
+  }
+}

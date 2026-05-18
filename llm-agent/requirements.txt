@@ -1,0 +1,9 @@
+# ZETI UBA — ReAct orchestrator (Phase 3a/3b) runtime deps.
+# Install on the UBA server into the llm-agent venv:
+#   python3.12 -m venv /opt/zeti-uba/llm-agent/.venv
+#   /opt/zeti-uba/llm-agent/.venv/bin/pip install -r requirements.txt
+anthropic>=0.49
+mcp>=1.2
+# Pinned <9: ZETI ELK cluster is Elasticsearch 8.19 — a 9.x client gets HTTP 400.
+elasticsearch>=8.13.0,<9
+requests>=2.31
