@@ -6,7 +6,7 @@ ES filebeat-* 인덱스에서 nginx 로그 가져오기 (v12)
 - ★ v12: JWT 디코드 안 함 (Filebeat script processor 가 ingestion 에서 끝냄).
   raw["jwt"] 는 이미 11+ 클레임 object.
 """
-from elasticsearch import Elasticsearch
+from elasticsearch import Elasticsearch, helpers
 from datetime import datetime, timedelta, timezone, UTC
 from dotenv import load_dotenv
 import urllib3
@@ -134,14 +134,6 @@ def normalize_log(raw):
     }
 
 
-def _range_query(start, end, limit):
-    return {
-        "query": {"range": {"@timestamp": {"gte": start.isoformat(), "lte": end.isoformat()}}},
-        "size": limit,
-        "sort": [{"@timestamp": "asc"}],
-    }
-
-
 def fetch_recent_logs(es=None, minutes=15, limit=10000):
     """최근 N분 nginx 로그 → 정규화 레코드 리스트."""
     if es is None:
@@ -150,18 +142,29 @@ def fetch_recent_logs(es=None, minutes=15, limit=10000):
     return fetch_logs_in_range(es, now - timedelta(minutes=minutes), now, limit)
 
 
-def fetch_logs_in_range(es, start, end, limit=10000):
+def fetch_logs_in_range(es, start, end, limit=None):
     """
     임의 [start, end] 구간의 nginx 로그 → 정규화 레코드 리스트.
 
-    seed baseline 은 과거 72h 구간이므로 minutes 윈도우로는 못 잡는다.
+    seed baseline 은 과거 168h 구간이므로 minutes 윈도우로는 못 잡는다.
     Phase 1 aggregator 는 이 함수로 윈도우를 직접 지정한다.
+
+    helpers.scan 으로 구간 전체를 페이지네이션한다 — 단일 search 의
+    max_result_window(10k) 한도 제거. seed 가 10k 를 넘겨도 전량 소비
+    (PHASE_1_2 §7 예고 보강). limit: None 이면 전체, 정수면 그 수에서 컷.
     """
     if es is None:
         es = get_es_client()
+    query = {"query": {"range": {"@timestamp": {
+        "gte": start.isoformat(), "lte": end.isoformat()}}}}
     try:
-        result = es.search(index=INDEX_PATTERN, body=_range_query(start, end, limit))
-        return [normalize_log(hit["_source"]) for hit in result["hits"]["hits"]]
+        logs = []
+        for hit in helpers.scan(es, index=INDEX_PATTERN, query=query,
+                                preserve_order=False, size=2000):
+            logs.append(normalize_log(hit["_source"]))
+            if limit is not None and len(logs) >= limit:
+                break
+        return logs
     except Exception as e:
         print(f"  [ERROR] ES 조회 실패: {e}")
         return []

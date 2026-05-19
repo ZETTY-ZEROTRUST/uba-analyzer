@@ -32,9 +32,10 @@ logging.basicConfig(level=logging.INFO,
 logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 log = logging.getLogger("uba-pipeline")
 
-# ES 기본 max_result_window. seed 부트스트랩(~8.6k doc)은 이 안에 든다.
-# 그 이상이면 search_after 페이지네이션 필요 (운영 이전 시 보강).
-FETCH_LIMIT = 10000
+# log_fetcher.fetch_logs_in_range 가 helpers.scan 페이지네이션을 쓰므로 구간
+# 전체를 소비한다 — 단일 search 의 max_result_window(10k) 한도 없음.
+# None = 무제한 (168h seed 117k doc 전량 baseline 반영).
+FETCH_LIMIT = None
 
 
 def run(hours, write=True, rebuild_baseline=True):
