@@ -69,20 +69,23 @@ def _extract_text(blocks: list[Any]) -> str:
 
 
 def _parse_json(text: str) -> dict[str, Any]:
-    """Parse the model's final answer, tolerating stray code fences."""
+    """Parse the model's final answer, tolerating code fences + trailing data."""
     cleaned = text.strip()
     if cleaned.startswith("```"):
         cleaned = cleaned.split("\n", 1)[-1]
         if cleaned.rstrip().endswith("```"):
             cleaned = cleaned.rstrip()[:-3]
+    cleaned = cleaned.strip()
     try:
         return json.loads(cleaned)
     except (json.JSONDecodeError, ValueError):
-        # last resort: grab the outermost {...}
-        start, end = cleaned.find("{"), cleaned.rfind("}")
-        if 0 <= start < end:
-            return json.loads(cleaned[start : end + 1])
-        raise
+        # Haiku sometimes appends prose or a second object after the JSON —
+        # raw_decode reads only the first JSON value and ignores the rest.
+        start = cleaned.find("{")
+        if start < 0:
+            raise
+        obj, _ = json.JSONDecoder().raw_decode(cleaned[start:])
+        return obj
 
 
 class ReActOrchestrator:

@@ -81,6 +81,34 @@ def _nvd_id_exists(cve_id: str, api_key: str | None = None, timeout: float = 5.0
     return int(payload.get("totalResults", 0)) > 0
 
 
+def _mapping_id(mapping: Any) -> str:
+    """A mitre/cve mapping entry may be a bare id string or a dict — the LLM
+    is not perfectly consistent. Pull the id out of whichever shape arrived."""
+    if isinstance(mapping, str):
+        return mapping.strip()
+    if isinstance(mapping, dict):
+        return str(mapping.get("id") or mapping.get("technique_id")
+                   or mapping.get("cve_id") or "").strip()
+    return ""
+
+
+def _as_mapping_list(value: Any) -> list[Any]:
+    """``mitre_mapping`` / ``cve_mapping`` may arrive as a flat list, as a
+    single mapping dict, or as a dict that wraps the list under a key
+    (e.g. ``{"techniques": [...]}``). Normalise to a flat list of entries so
+    the validator never mistakes a wrapper key for an id."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, dict):
+        if any(k in value for k in ("id", "technique_id", "cve_id")):
+            return [value]  # a single mapping entry
+        for inner in value.values():
+            if isinstance(inner, list):
+                return inner  # unwrap {"techniques": [...]}
+        return []
+    return []
+
+
 def validate_llm_output(
     llm_response: dict[str, Any],
     es: Elasticsearch,
@@ -95,10 +123,10 @@ def validate_llm_output(
     cve_cache = _load_cve_cache()
 
     cleaned_mitre = []
-    for mapping in llm_response.get("mitre_mapping", []) or []:
-        tid = (mapping or {}).get("id", "")
+    for mapping in _as_mapping_list(llm_response.get("mitre_mapping")):
+        tid = _mapping_id(mapping)
         if _mitre_id_exists(es, tid):
-            cleaned_mitre.append(mapping)
+            cleaned_mitre.append(mapping if isinstance(mapping, dict) else {"id": tid})
         else:
             result.mitre_id_valid = False
             result.hallucination_count += 1
@@ -106,11 +134,11 @@ def validate_llm_output(
     llm_response["mitre_mapping"] = cleaned_mitre
 
     cleaned_cve = []
-    for mapping in llm_response.get("cve_mapping", []) or []:
-        cid = (mapping or {}).get("id", "")
+    for mapping in _as_mapping_list(llm_response.get("cve_mapping")):
+        cid = _mapping_id(mapping)
         in_cache = cid in cve_cache
         if in_cache or _nvd_id_exists(cid, api_key=nvd_api_key):
-            cleaned_cve.append(mapping)
+            cleaned_cve.append(mapping if isinstance(mapping, dict) else {"id": cid})
         else:
             result.cve_id_valid = False
             result.hallucination_count += 1
