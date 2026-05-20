@@ -46,7 +46,11 @@ SONNET_MODEL = os.environ.get("UBA_SONNET_MODEL", "claude-sonnet-4-6")
 # --- ReAct loop limits -----------------------------------------------------
 PHASE_3A_MAX_ITERS = 5
 PHASE_3B_MAX_ITERS = 8
-MAX_TOKENS = 4096
+# Phase 3b 일일 인텔리전스는 30+ 알람을 다루므로 4096 으로는 JSON 본문이
+# 잘려 _parse_json 이 "Unterminated string" 으로 실패한다. Sonnet 4.6 기본
+# 출력 한도 8192 까지 끌어올려 헤드룸 확보. Haiku(3a)는 4096 으로도 충분하나
+# 8192 라도 안 쓰면 영향 없음.
+MAX_TOKENS = 8192
 
 # Tool results are fed straight back into the agent context — cap their size
 # so a large ES hit set cannot blow the token budget.
