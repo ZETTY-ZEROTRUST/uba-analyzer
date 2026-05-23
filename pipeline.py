@@ -19,13 +19,13 @@ import argparse
 import logging
 from datetime import datetime, timedelta, UTC
 
-import log_fetcher
-import event_aggregator
-import ip_aggregator
-import baseline_store
-import risk_scorer
-import es_writer
-import user_profile
+from ingest import log_fetcher
+from aggregate import event_aggregator
+from aggregate import ip_aggregator
+from scoring import baseline_store
+from scoring import risk_scorer
+from storage import es_writer
+import user_profile   # Phase 2.5 (main 측 신규) — refactor 후속 작업으로 디렉토리 배치 예정
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -33,9 +33,10 @@ logging.basicConfig(level=logging.INFO,
 logging.getLogger("elasticsearch").setLevel(logging.WARNING)
 log = logging.getLogger("uba-pipeline")
 
-# ES 기본 max_result_window. seed 부트스트랩(~8.6k doc)은 이 안에 든다.
-# 그 이상이면 search_after 페이지네이션 필요 (운영 이전 시 보강).
-FETCH_LIMIT = 10000
+# log_fetcher.fetch_logs_in_range 가 helpers.scan 페이지네이션을 쓰므로 구간
+# 전체를 소비한다 — 단일 search 의 max_result_window(10k) 한도 없음.
+# None = 무제한 (168h seed 117k doc 전량 baseline 반영).
+FETCH_LIMIT = None
 
 
 def run(hours, write=True, rebuild_baseline=True):
@@ -50,26 +51,27 @@ def run(hours, write=True, rebuild_baseline=True):
         log.warning("로그 0건 — 종료")
         return
 
-    log.info("[2] 집계 (user / IP 양방향)")
+    log.info("[2] 집계 (user / IP / ASN)")
     user_events = event_aggregator.aggregate_user_events(logs)
     ip_events = ip_aggregator.aggregate_ip_events(logs)
-    log.info(f"    user 윈도우 {len(user_events)} / IP 윈도우 {len(ip_events)}")
+    asn_events = ip_aggregator.aggregate_asn_events(logs)   # Route B — 분산 enumeration
+    log.info(f"    user {len(user_events)} / IP {len(ip_events)} / ASN {len(asn_events)}")
 
     log.info("[3] baseline 산출")
-    baseline_docs = baseline_store.compute_baseline(user_events, ip_events)
+    baseline_docs = baseline_store.compute_baseline(user_events, ip_events, asn_events)
     baseline = baseline_store.index_baseline(baseline_docs)
     rb = baseline.get("request_burst", {})
     log.info(f"    request_burst: mean={rb.get('mean')} n={rb.get('sample_count')} "
              f"cold_start={rb.get('cold_start')}")
 
     log.info("[4] 7 팩터 채점")
-    risk_docs = risk_scorer.score_all(user_events, ip_events, baseline)
+    risk_docs = risk_scorer.score_all(user_events, ip_events, baseline, asn_events=asn_events)
     summary = risk_scorer.summarize(risk_docs)
     log.info(f"    {summary}")
 
     if write:
         log.info("[5] ES 기록")
-        r1 = es_writer.write_docs(user_events + ip_events, "uba-events", es)
+        r1 = es_writer.write_docs(user_events + ip_events + asn_events, "uba-events", es)
         log.info(f"    uba-events: {r1['saved']} 저장 ({r1['index']})")
         if rebuild_baseline:
             r2 = es_writer.write_docs(baseline_docs, "uba-baseline", es)

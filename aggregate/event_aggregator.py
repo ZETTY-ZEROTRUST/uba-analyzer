@@ -18,7 +18,7 @@ import re
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from token_violation import compute_token_violation
+from scoring.token_violation import compute_token_violation
 
 WINDOW_SECONDS = 300   # 5분
 
