@@ -15,7 +15,7 @@ import os
 
 # 같은 디렉토리의 jwt_parser 임포트
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from jwt_parser import derive_token_fields
+from ingest.jwt_parser import derive_token_fields
 
 # .env 로드 (ES_HOST, ES_USER, ES_PASS)
 load_dotenv()

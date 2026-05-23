@@ -17,6 +17,8 @@ seed 정상 트래픽 + S2/S4/S6 공격 주입 → 전 파이프라인을 통과
   S4 enumeration → IP doc(5min), dominant ip_user_diversity, L4
   S6 Slow & Low → IP doc(24h), dominant ip_user_diversity, L4(Slow & Low)
 """
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import importlib.util
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -27,11 +29,11 @@ _spec = importlib.util.spec_from_file_location(
 sb = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(sb)
 
-import log_fetcher
-import event_aggregator
-import ip_aggregator
-import baseline_store
-import risk_scorer
+from ingest import log_fetcher
+from aggregate import event_aggregator
+from aggregate import ip_aggregator
+from scoring import baseline_store
+from scoring import risk_scorer
 
 NOW = datetime.now(timezone.utc)
 
@@ -128,8 +130,10 @@ def run():
 
     # S2 — victim user 140000007
     s2 = best("140000007")
+    # token_replay graded(v13: base+modifier) 적용 후 S2 점수 = 70
+    # (base 55 country crossing + 15 cloud bonus, fan-out·multi-jti·geo span 0)
     checks.append(("S2 하이재킹 (user)", s2,
-                   s2 and s2["total_score"] == 80 and s2["dominant_factor"] == "token_replay"
+                   s2 and s2["total_score"] == 70 and s2["dominant_factor"] == "token_replay"
                    and s2["attacker_level"] == "L2"))
 
     # S4 — attacker IP 203.0.113.50, 5min 윈도우

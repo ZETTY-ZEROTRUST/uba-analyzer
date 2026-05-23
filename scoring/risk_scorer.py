@@ -13,9 +13,9 @@ attacker_level_classifier 로 등급·유출 플래그를 붙여, uba-risk-score
   - pii_signals(backend AOP PII 카운트)는 연동 전이라 None — response_sensitivity
     는 0 으로 graceful degrade.
 """
-import factor_engine
-import attacker_level_classifier as alc
-from es_writer import write_docs
+from scoring import factor_engine
+from scoring import attacker_level_classifier as alc
+from storage.es_writer import write_docs
 
 ALERT_THRESHOLD = 50   # PROGRESS: 상위 위험 = score >= max(p99_today, 50)
 

@@ -19,12 +19,12 @@ import argparse
 import logging
 from datetime import datetime, timedelta, UTC
 
-import log_fetcher
-import event_aggregator
-import ip_aggregator
-import baseline_store
-import risk_scorer
-import es_writer
+from ingest import log_fetcher
+from aggregate import event_aggregator
+from aggregate import ip_aggregator
+from scoring import baseline_store
+from scoring import risk_scorer
+from storage import es_writer
 
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s [%(levelname)s] %(message)s",
