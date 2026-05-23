@@ -23,19 +23,18 @@ load_dotenv()
 urllib3.disable_warnings()
 
 
-# === ES 설정 (env 기반) ===
-ES_HOST = os.environ["ES_HOST"]
-ES_USER = os.environ["ES_USER"]
-ES_PASS = os.environ["ES_PASS"]
+# === ES 설정 ===
+# ES_HOST/ES_USER/ES_PASS 는 client 생성 시점에만 필요. module import 자체는
+# env 없이도 통과해야 CI / 단위테스트 / py_compile 이 깨지지 않음.
 INDEX_PATTERN = "filebeat-*"
 
 
 def get_es_client():
-    """ES 클라이언트 생성"""
+    """ES 클라이언트 생성 — ES_HOST/USER/PASS env 필수 (없으면 KeyError)."""
     return Elasticsearch(
-        [ES_HOST],
-        basic_auth=(ES_USER, ES_PASS),
-        verify_certs=False
+        [os.environ["ES_HOST"]],
+        basic_auth=(os.environ["ES_USER"], os.environ["ES_PASS"]),
+        verify_certs=False,
     )
 
 

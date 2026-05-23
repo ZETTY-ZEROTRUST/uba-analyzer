@@ -20,13 +20,17 @@ import urllib3
 load_dotenv()
 urllib3.disable_warnings()
 
-ES_HOST = os.environ["ES_HOST"]
-ES_USER = os.environ["ES_USER"]
-ES_PASS = os.environ["ES_PASS"]
+# ES_HOST/USER/PASS 는 get_es_client() 시점에만 필요. module import 는 env 없이도
+# 통과해야 CI / 단위테스트 / py_compile 안 깨짐 (안티패턴: module-level env read).
 
 
 def get_es_client():
-    return Elasticsearch([ES_HOST], basic_auth=(ES_USER, ES_PASS), verify_certs=False)
+    """ES 클라이언트 — ES_HOST/USER/PASS env 필수 (없으면 KeyError)."""
+    return Elasticsearch(
+        [os.environ["ES_HOST"]],
+        basic_auth=(os.environ["ES_USER"], os.environ["ES_PASS"]),
+        verify_certs=False,
+    )
 
 
 def daily_index(prefix):
