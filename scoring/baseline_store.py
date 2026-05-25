@@ -95,6 +95,7 @@ def compute_baseline(user_events, ip_events, asn_events=None, excluded_targets=N
     docs = []
     for metric, values in metrics.items():
         dist = _distribution(values)
+        dist["@timestamp"] = now      # Kibana data view 기본 timeField 일관성 (Phase 5 TROUBLESHOOTING)
         dist["metric"] = metric
         dist["computed_at"] = now
         dist["cold_start"] = dist["sample_count"] < MIN_SAMPLES
