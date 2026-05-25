@@ -70,23 +70,32 @@ def load_attack_ground_truth(date_prefix="20260524"):
 
 
 def build_classifier(scenarios):
-    """target_id (sub 또는 IP 또는 ASN) → 코호트 이름."""
-    sub_to_scen, ip_to_scen = {}, {}
+    """target_id (sub 또는 IP 또는 ASN) → 코호트 이름.
+
+    한 sub/IP 가 여러 시나리오 풀에 속하면 (S5/S5b 처럼 풀 동일) 모든 매칭
+    시나리오를 묶어 "attack-S5+S5B" 형식으로 반환 — setdefault 충돌 회피.
+    """
+    sub_to_scen = defaultdict(set)
+    ip_to_scen = defaultdict(set)
     for scen, s in scenarios.items():
         for sub in s["subs"]:
-            sub_to_scen.setdefault(sub, scen)
+            sub_to_scen[sub].add(scen)
         for ip in s["ips"]:
-            ip_to_scen.setdefault(ip, scen)
+            ip_to_scen[ip].add(scen)
 
     def classify(doc):
         target_type = doc.get("target_type")
         target_id = str(doc.get("target_id", ""))
         ip_class = doc.get("ip_class")
 
-        if target_type == "user" and target_id in sub_to_scen:
-            return f"attack-{sub_to_scen[target_id]}"
-        if target_type in ("ip", "asn") and target_id in ip_to_scen:
-            return f"attack-{ip_to_scen[target_id]}"
+        matched = set()
+        if target_type == "user":
+            matched = sub_to_scen.get(target_id, set())
+        elif target_type in ("ip", "asn"):
+            matched = ip_to_scen.get(target_id, set())
+
+        if matched:
+            return "attack-" + "+".join(sorted(matched))
         if target_id == AMBIG_NAT_IP:
             return "AMBIG_NAT"
         if ip_class == "cgnat_kr":
@@ -95,7 +104,7 @@ def build_classifier(scenarios):
             return "cloud-other"
         return "other"
 
-    return classify
+    return classify, sub_to_scen, ip_to_scen
 
 
 def extract_scores(doc):
@@ -147,7 +156,7 @@ def main():
     for scen, s in scenarios.items():
         print(f"     {scen}: subs={len(s['subs'])} ips={len(s['ips'])} docs={s['doc_count']}")
 
-    classify = build_classifier(scenarios)
+    classify, sub_to_scen, ip_to_scen = build_classifier(scenarios)
     es = get_es()
     print("[ES] fetching uba-risk-scores-* ...")
     docs = fetch_all_risk_docs(es)
@@ -156,6 +165,12 @@ def main():
     # 코호트 × (v1 알람 / v2 알람 / 총 윈도우)
     matrix = defaultdict(lambda: {"v1_alarms": 0, "v2_alarms": 0, "total": 0,
                                    "v1_scores": [], "v2_scores": []})
+    # 시나리오별 binary trigger (PROGRESS_TODO 의 KPI 정의 = "탐지된 시나리오 / 전체")
+    scen_status = {scen: {"triggered_v1": False, "triggered_v2": False,
+                           "max_v1": 0, "max_v2": 0,
+                           "alarm_windows_v1": 0, "alarm_windows_v2": 0,
+                           "total_windows": 0, "dominant_factors": defaultdict(int)}
+                    for scen in scenarios}
     for hit in docs:
         d = hit["_source"]
         cohort = classify(d)
@@ -166,6 +181,28 @@ def main():
         m["v2_scores"].append(v2)
         if v1 >= ALERT_THRESHOLD: m["v1_alarms"] += 1
         if v2 >= ALERT_THRESHOLD: m["v2_alarms"] += 1
+
+        # per-scenario aggregation (한 doc 이 여러 시나리오에 매핑 가능)
+        target_type = d.get("target_type")
+        target_id = str(d.get("target_id", ""))
+        matched = set()
+        if target_type == "user":
+            matched = sub_to_scen.get(target_id, set())
+        elif target_type in ("ip", "asn"):
+            matched = ip_to_scen.get(target_id, set())
+        for scen in matched:
+            s = scen_status[scen]
+            s["total_windows"] += 1
+            s["max_v1"] = max(s["max_v1"], v1)
+            s["max_v2"] = max(s["max_v2"], v2)
+            if v1 >= ALERT_THRESHOLD:
+                s["triggered_v1"] = True
+                s["alarm_windows_v1"] += 1
+            if v2 >= ALERT_THRESHOLD:
+                s["triggered_v2"] = True
+                s["alarm_windows_v2"] += 1
+                df = d.get("dominant_factor")
+                if df: s["dominant_factors"][df] += 1
 
     # 출력 — 한국어 표
     print(f"\n{'='*100}\nv1 vs v2 매트릭스 (ALERT_THRESHOLD = {ALERT_THRESHOLD})\n{'='*100}")
@@ -203,6 +240,35 @@ def main():
     print(f"{'전체 정상 (FPR)':<22}{normal_total:>10}{normal_v1:>10}{normal_v2:>10}"
           f"{overall_v1_fpr:>10.3f}% {overall_v2_fpr:>10.3f}% {overall_v1_fpr-overall_v2_fpr:>+9.3f}p")
 
+    # === per-scenario TPR (시나리오 단위 binary trigger) ===
+    print(f"\n{'='*100}\n시나리오 매트릭스 (per-scenario, KPI 정의 = 탐지된 시나리오 / 전체)\n{'='*100}")
+    print(f"{'시나리오':<12}{'윈도우':>8}{'v1 탐지':>10}{'v2 탐지':>10}{'max_v1':>10}{'max_v2':>10}{'알람 win v2':>14}{'dominant_factor':>20}")
+    print("-" * 100)
+    scen_rows = []
+    for scen in sorted(scen_status.keys()):
+        s = scen_status[scen]
+        df_top = max(s["dominant_factors"].items(), key=lambda x: x[1])[0] if s["dominant_factors"] else "—"
+        print(f"{scen:<12}{s['total_windows']:>8}"
+              f"{('✅' if s['triggered_v1'] else '❌'):>10}"
+              f"{('✅' if s['triggered_v2'] else '❌'):>10}"
+              f"{s['max_v1']:>10}{s['max_v2']:>10}{s['alarm_windows_v2']:>14}{df_top:>20}")
+        scen_rows.append({
+            "scenario": scen, "total_windows": s["total_windows"],
+            "triggered_v1": s["triggered_v1"], "triggered_v2": s["triggered_v2"],
+            "max_v1": s["max_v1"], "max_v2": s["max_v2"],
+            "alarm_windows_v1": s["alarm_windows_v1"],
+            "alarm_windows_v2": s["alarm_windows_v2"],
+            "dominant_factors": dict(s["dominant_factors"]),
+        })
+    detected_v1 = sum(1 for s in scen_status.values() if s["triggered_v1"])
+    detected_v2 = sum(1 for s in scen_status.values() if s["triggered_v2"])
+    total_scen = len(scen_status)
+    tpr_v1 = detected_v1 / total_scen * 100 if total_scen else 0
+    tpr_v2 = detected_v2 / total_scen * 100 if total_scen else 0
+    print("-" * 100)
+    print(f"{'TPR (시나리오)':<12}{'':>8}{f'{detected_v1}/{total_scen}':>10}{f'{detected_v2}/{total_scen}':>10}"
+          f"{'':>10}{'':>10}{tpr_v1:>10.1f}% v1{tpr_v2:>9.1f}% v2")
+
     # JSON 덤프
     Path(args.out_json).parent.mkdir(parents=True, exist_ok=True)
     with open(args.out_json, "w") as f:
@@ -220,6 +286,11 @@ def main():
                 "v1_fpr_pct": overall_v1_fpr,
                 "v2_fpr_pct": overall_v2_fpr,
                 "delta_pp": overall_v1_fpr - overall_v2_fpr,
+            },
+            "scenarios_matrix": scen_rows,
+            "tpr": {
+                "detected_v1": detected_v1, "detected_v2": detected_v2,
+                "total": total_scen, "v1_pct": tpr_v1, "v2_pct": tpr_v2,
             },
         }, f, ensure_ascii=False, indent=2)
     print(f"\n[OUT] JSON: {args.out_json}")
@@ -245,6 +316,19 @@ def main():
     md.append(f"- v1 FPR = **{overall_v1_fpr:.3f}%** ({normal_v1}/{normal_total})")
     md.append(f"- v2 FPR = **{overall_v2_fpr:.3f}%** ({normal_v2}/{normal_total})")
     md.append(f"- Δ = **{overall_v1_fpr-overall_v2_fpr:+.3f}pp** (soft cap 효과)")
+    md.append("")
+    md.append(f"## 시나리오 매트릭스 (per-scenario TPR)")
+    md.append("")
+    md.append("| 시나리오 | 윈도우 | v1 탐지 | v2 탐지 | max_v1 | max_v2 | 알람 win (v2) | dominant_factor |")
+    md.append("|---|---:|:---:|:---:|---:|---:|---:|---|")
+    for r in scen_rows:
+        df_top = max(r["dominant_factors"].items(), key=lambda x: x[1])[0] if r["dominant_factors"] else "—"
+        md.append(f"| `{r['scenario']}` | {r['total_windows']} "
+                  f"| {'✅' if r['triggered_v1'] else '❌'} "
+                  f"| {'✅' if r['triggered_v2'] else '❌'} "
+                  f"| {r['max_v1']} | {r['max_v2']} | {r['alarm_windows_v2']} | `{df_top}` |")
+    md.append("")
+    md.append(f"**TPR (시나리오 단위)**: v1 = **{tpr_v1:.1f}%** ({detected_v1}/{total_scen}) / v2 = **{tpr_v2:.1f}%** ({detected_v2}/{total_scen})")
     Path(args.out_md).write_text("\n".join(md))
     print(f"[OUT] Markdown: {args.out_md}")
 

@@ -1,5 +1,5 @@
 {
-  "computed_at": "2026-05-24T10:13:14.538391+00:00",
+  "computed_at": "2026-05-25T01:23:28.036382+00:00",
   "alert_threshold": 50,
   "ambig_nat_ip": "104.196.45.77",
   "ground_truth_scenarios": {
@@ -447,6 +447,7 @@
         "140000024",
         "140000025",
         "140000037",
+        "140000038",
         "140000042",
         "140000046",
         "140000049",
@@ -504,6 +505,7 @@
         "140000323",
         "140000327",
         "140000329",
+        "140000333",
         "140000334",
         "140000340",
         "140000345",
@@ -541,7 +543,7 @@
       "ips": [
         "98.138.10.66"
       ],
-      "doc_count": 98
+      "doc_count": 100
     },
     "S8": {
       "subs": [
@@ -563,62 +565,73 @@
       "cohort": "cgnat_kr",
       "kind": "normal",
       "rate_label": "FPR",
-      "total": 32786,
-      "v1_alarms": 1013,
+      "total": 62369,
+      "v1_alarms": 1019,
       "v2_alarms": 0,
-      "v1_rate_pct": 3.0897334228024156,
+      "v1_rate_pct": 1.6338244961439177,
       "v2_rate_pct": 0.0,
-      "delta_pp": 3.0897334228024156
+      "delta_pp": 1.6338244961439177
     },
     {
       "cohort": "AMBIG_NAT",
       "kind": "normal",
       "rate_label": "FPR",
-      "total": 257,
-      "v1_alarms": 34,
-      "v2_alarms": 34,
-      "v1_rate_pct": 13.229571984435799,
-      "v2_rate_pct": 13.229571984435799,
+      "total": 485,
+      "v1_alarms": 37,
+      "v2_alarms": 37,
+      "v1_rate_pct": 7.628865979381444,
+      "v2_rate_pct": 7.628865979381444,
       "delta_pp": 0.0
     },
     {
       "cohort": "cloud-other",
       "kind": "normal",
       "rate_label": "FPR",
-      "total": 257,
-      "v1_alarms": 6,
-      "v2_alarms": 6,
-      "v1_rate_pct": 2.3346303501945527,
-      "v2_rate_pct": 2.3346303501945527,
+      "total": 490,
+      "v1_alarms": 14,
+      "v2_alarms": 14,
+      "v1_rate_pct": 2.857142857142857,
+      "v2_rate_pct": 2.857142857142857,
       "delta_pp": 0.0
     },
     {
       "cohort": "other",
       "kind": "normal",
       "rate_label": "FPR",
-      "total": 4008,
-      "v1_alarms": 0,
-      "v2_alarms": 0,
-      "v1_rate_pct": 0.0,
-      "v2_rate_pct": 0.0,
+      "total": 7632,
+      "v1_alarms": 6,
+      "v2_alarms": 6,
+      "v1_rate_pct": 0.07861635220125787,
+      "v2_rate_pct": 0.07861635220125787,
       "delta_pp": 0.0
     },
     {
       "cohort": "attack-S2",
       "kind": "attack",
       "rate_label": "TPR",
-      "total": 1,
-      "v1_alarms": 0,
-      "v2_alarms": 0,
-      "v1_rate_pct": 0.0,
-      "v2_rate_pct": 0.0,
+      "total": 11,
+      "v1_alarms": 1,
+      "v2_alarms": 1,
+      "v1_rate_pct": 9.090909090909092,
+      "v2_rate_pct": 9.090909090909092,
       "delta_pp": 0.0
     },
     {
       "cohort": "attack-S4",
       "kind": "attack",
       "rate_label": "TPR",
-      "total": 5571,
+      "total": 5,
+      "v1_alarms": 4,
+      "v2_alarms": 4,
+      "v1_rate_pct": 80.0,
+      "v2_rate_pct": 80.0,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S4+S5",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 5612,
       "v1_alarms": 0,
       "v2_alarms": 0,
       "v1_rate_pct": 0.0,
@@ -626,10 +639,109 @@
       "delta_pp": 0.0
     },
     {
+      "cohort": "attack-S4+S5+S5B",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 1945,
+      "v1_alarms": 0,
+      "v2_alarms": 0,
+      "v1_rate_pct": 0.0,
+      "v2_rate_pct": 0.0,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S4+S5+S5B+S6",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 466,
+      "v1_alarms": 0,
+      "v2_alarms": 0,
+      "v1_rate_pct": 0.0,
+      "v2_rate_pct": 0.0,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S4+S5+S5B+S6+S8",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 95,
+      "v1_alarms": 1,
+      "v2_alarms": 1,
+      "v1_rate_pct": 1.0526315789473684,
+      "v2_rate_pct": 1.0526315789473684,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S4+S5+S5B+S8",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 88,
+      "v1_alarms": 1,
+      "v2_alarms": 1,
+      "v1_rate_pct": 1.1363636363636365,
+      "v2_rate_pct": 1.1363636363636365,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S4+S5+S6",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 1960,
+      "v1_alarms": 0,
+      "v2_alarms": 0,
+      "v1_rate_pct": 0.0,
+      "v2_rate_pct": 0.0,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S4+S5+S8",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 593,
+      "v1_alarms": 6,
+      "v2_alarms": 6,
+      "v1_rate_pct": 1.0118043844856661,
+      "v2_rate_pct": 1.0118043844856661,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S5",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 30,
+      "v1_alarms": 2,
+      "v2_alarms": 2,
+      "v1_rate_pct": 6.666666666666667,
+      "v2_rate_pct": 6.666666666666667,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S5+S5B",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 123,
+      "v1_alarms": 25,
+      "v2_alarms": 25,
+      "v1_rate_pct": 20.32520325203252,
+      "v2_rate_pct": 20.32520325203252,
+      "delta_pp": 0.0
+    },
+    {
       "cohort": "attack-S5B",
       "kind": "attack",
       "rate_label": "TPR",
-      "total": 1010,
+      "total": 1218,
+      "v1_alarms": 0,
+      "v2_alarms": 0,
+      "v1_rate_pct": 0.0,
+      "v2_rate_pct": 0.0,
+      "delta_pp": 0.0
+    },
+    {
+      "cohort": "attack-S5B+S6",
+      "kind": "attack",
+      "rate_label": "TPR",
+      "total": 816,
       "v1_alarms": 0,
       "v2_alarms": 0,
       "v1_rate_pct": 0.0,
@@ -640,18 +752,93 @@
       "cohort": "attack-S6",
       "kind": "attack",
       "rate_label": "TPR",
-      "total": 996,
-      "v1_alarms": 0,
-      "v2_alarms": 0,
-      "v1_rate_pct": 0.0,
-      "v2_rate_pct": 0.0,
+      "total": 1990,
+      "v1_alarms": 19,
+      "v2_alarms": 19,
+      "v1_rate_pct": 0.9547738693467337,
+      "v2_rate_pct": 0.9547738693467337,
       "delta_pp": 0.0
     }
   ],
   "overall": {
-    "normal_total": 37308,
-    "v1_fpr_pct": 2.8224509488581537,
-    "v2_fpr_pct": 0.10721561059290233,
-    "delta_pp": 2.715235338265251
+    "normal_total": 70976,
+    "v1_fpr_pct": 1.516005410279531,
+    "v2_fpr_pct": 0.0803088367899008,
+    "delta_pp": 1.4356965734896303
+  },
+  "scenarios_matrix": [
+    {
+      "scenario": "S2",
+      "total_windows": 11,
+      "triggered_v1": true,
+      "triggered_v2": true,
+      "max_v1": 55,
+      "max_v2": 55,
+      "alarm_windows_v1": 1,
+      "alarm_windows_v2": 1,
+      "dominant_factors": {}
+    },
+    {
+      "scenario": "S4",
+      "total_windows": 10764,
+      "triggered_v1": true,
+      "triggered_v2": true,
+      "max_v1": 100,
+      "max_v2": 100,
+      "alarm_windows_v1": 12,
+      "alarm_windows_v2": 12,
+      "dominant_factors": {}
+    },
+    {
+      "scenario": "S5",
+      "total_windows": 10912,
+      "triggered_v1": true,
+      "triggered_v2": true,
+      "max_v1": 100,
+      "max_v2": 100,
+      "alarm_windows_v1": 35,
+      "alarm_windows_v2": 35,
+      "dominant_factors": {}
+    },
+    {
+      "scenario": "S5B",
+      "total_windows": 4751,
+      "triggered_v1": true,
+      "triggered_v2": true,
+      "max_v1": 100,
+      "max_v2": 100,
+      "alarm_windows_v1": 27,
+      "alarm_windows_v2": 27,
+      "dominant_factors": {}
+    },
+    {
+      "scenario": "S6",
+      "total_windows": 5327,
+      "triggered_v1": true,
+      "triggered_v2": true,
+      "max_v1": 100,
+      "max_v2": 100,
+      "alarm_windows_v1": 20,
+      "alarm_windows_v2": 20,
+      "dominant_factors": {}
+    },
+    {
+      "scenario": "S8",
+      "total_windows": 776,
+      "triggered_v1": true,
+      "triggered_v2": true,
+      "max_v1": 80,
+      "max_v2": 80,
+      "alarm_windows_v1": 8,
+      "alarm_windows_v2": 8,
+      "dominant_factors": {}
+    }
+  ],
+  "tpr": {
+    "detected_v1": 6,
+    "detected_v2": 6,
+    "total": 6,
+    "v1_pct": 100.0,
+    "v2_pct": 100.0
   }
 }
