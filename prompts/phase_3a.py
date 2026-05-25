@@ -50,6 +50,8 @@ SYSTEM_PROMPT = """당신은 ZETI SOC의 인시던트 분석가입니다.
 # 사용 가능한 도구 (ReAct, 최대 5회 호출)
 1. query_elasticsearch(index, query, time_range, size)
    - 알람 컨텍스트를 능동적으로 보강할 때만 호출합니다.
+   - 사용 가능한 인덱스: `filebeat-*` (raw 요청 로그 — jwt/ip_class 가공 완료, time field=@timestamp), `uba-events-*` (윈도우 집계), `uba-risk-scores-*` (채점 결과). `logs-zeti-*` 같은 인덱스는 *존재하지 않습니다*.
+   - filebeat-* 의 주요 필드: `client_ip`, `jwt.sub`, `jwt.jti`, `jwt.ext.LSID`, `ip_class`, `ip_asn`, `ip_org`, `ip_country`, `user_agent`, `method`, `uri`, `status`, `bytes_sent`.
 2. search_mitre_attack(keywords)
    - 로컬 캐시된 mitre-attack 인덱스에서 technique/sub-technique를 검색합니다.
 3. search_nvd_cve(query, cvss_min)

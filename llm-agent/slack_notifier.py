@@ -63,10 +63,12 @@ def _target_line(alert_doc: dict[str, Any]) -> str:
     if not ip:
         return f"Target: {label} {target_id}"
     loc = ip.get("ip_city") or ip.get("ip_country") or "-"
-    asn = ip.get("ip_asn", "-")
-    org = ip.get("ip_org", "-")
-    ip_class = ip.get("ip_class", "unknown")
-    return f"Target: {label} {target_id} ({loc}, {asn} {org}, ip_class={ip_class})"
+    asn = ip.get("ip_asn") or "-"
+    org = ip.get("ip_org") or "-"
+    ip_class = ip.get("ip_class") or "unknown"
+    # ASN/org 둘 다 비면 함께 생략 (None None 회피)
+    asn_org = f", {asn} {org}".rstrip() if (asn != "-" or org != "-") else ""
+    return f"Target: {label} {target_id} ({loc}{asn_org}, ip_class={ip_class})"
 
 
 def _score_line(alert_doc: dict[str, Any]) -> str:
@@ -91,21 +93,22 @@ def _dominant_line(alert_doc: dict[str, Any]) -> str:
 
 
 def _mitre_line(report: dict[str, Any]) -> str:
-    items = report.get("mitre_mapping") or []
+    # grounding validator 가 환각 ID 필터링하면 빈 dict 남을 수 있음 — id 있는 것만 표시.
+    items = [m for m in (report.get("mitre_mapping") or []) if m.get("id")]
     if not items:
-        return "[MITRE] -"
+        return "[MITRE] (grounded 결과 없음)"
     rendered = " / ".join(
-        f"{m.get('id', '?')} {m.get('name', '')}".strip() for m in items
+        f"{m['id']} {m.get('name', '')}".strip() for m in items
     )
     return f"[MITRE] {rendered}"
 
 
 def _cve_line(report: dict[str, Any]) -> str:
-    items = report.get("cve_mapping") or []
+    items = [c for c in (report.get("cve_mapping") or []) if c.get("id")]
     if not items:
-        return "[CVE] -"
+        return "[CVE] (grounded 결과 없음)"
     rendered = " / ".join(
-        f"{c.get('id', '?')} ({c.get('rationale', '')})".strip() for c in items
+        f"{c['id']} ({c.get('rationale', '')})".strip(" ()") for c in items
     )
     return f"[CVE] {rendered}"
 
@@ -177,7 +180,7 @@ def send_realtime_alert(
     """Send a Phase 3a realtime incident alert to Slack."""
     url = webhook_url or os.environ.get("SLACK_WEBHOOK_URL", "")
     message = build_realtime_message(alert_doc)
-    return _post(url, {"text": message, "unfurl_links": False})
+    return _post(url, {"text": message, "unfurl_links": False, "mrkdwn": True})
 
 
 # --------------------------------------------------------------------------
@@ -256,4 +259,4 @@ def send_daily_report(
         or os.environ.get("SLACK_WEBHOOK_URL", "")
     )
     message = build_daily_message(intel_doc)
-    return _post(url, {"text": message, "unfurl_links": False})
+    return _post(url, {"text": message, "unfurl_links": False, "mrkdwn": True})
