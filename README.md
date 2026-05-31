@@ -485,6 +485,7 @@ cat docs/kpi/SUMMARY.md                              # 전체 KPI 요약
 | [`backend`](https://github.com/ZETTY-ZEROTRUST/backend) | 의도된 4 취약점 + 11 클레임 JWT 발급 — 본 시스템의 _입력 원천_ |
 | [`log-pipeline`](https://github.com/ZETTY-ZEROTRUST/log-pipeline) | Filebeat + ES ingest pipeline (jwt-decode + asn-classify) — 본 시스템의 _직전 단계_ |
 | [`attack-simulation`](https://github.com/ZETTY-ZEROTRUST/attack-simulation) | S2/S4/S5/S5b/S6/S8 시나리오 — 본 시스템의 _검증 트래픽 원천_ |
+| [`zero-trust-architecture`](https://github.com/ZETTY-ZEROTRUST/zero-trust-architecture) | AWS 인프라 IaC — 본 UBA 가 올라가는 priv-monitor tier + ELK 접근 SG 체인 + WAF/Route53 정의 |
 | [`.github`](https://github.com/ZETTY-ZEROTRUST/.github) | Org Overview README |
 
 ---
