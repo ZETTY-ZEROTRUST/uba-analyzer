@@ -22,7 +22,7 @@
 | 시나리오 | 공격 특성 | max v2 score | 알람 윈도우 수 | 핵심 발동 팩터 | 의미 |
 |---|---|---|---|---|---|
 | **S2** token hijack | victim 정상(KR cgnat_kr) → hijack(US cloud) 동일 jti | **55** | 1 | `token_replay` base 35 + class crossing | 키 외 토큰 통째 탈취 detection |
-| **S4** IDOR enum | 단일 IP(AWS) × 100 sub 순차 | **100** | 12 | `ip_user_diversity` override | 쿠팡 유출 패턴 직접 재현 |
+| **S4** forged-sub sweep | 단일 IP(AWS) × 100 sub 순차 | **100** | 12 | `ip_user_diversity` override | 쿠팡 유출 패턴 직접 재현 |
 | **S5** 분산 enum | 51 IP × 100 sub 순차 | **100** | 35 ★ | **Route B** `ip_user_diversity` ASN-윈도우 | 단일 IP 회피 우회 무효화 |
 | **S5b** 분산 random | 51 IP × random sub | **100** | 27 | Route B | sub 순서 noise 도 무효화 |
 | **S6** Slow & Low | 매 ~47초 1 회, 6 h | **100** | 20 | `ip_user_diversity` 24h + `cumulative_exfil` | 쿠팡 7개월 미탐지 재현·대응 |

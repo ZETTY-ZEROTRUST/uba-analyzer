@@ -81,7 +81,7 @@ INTEL_DOC = {
     ),
     "attacker_assessment": (
         "공격자는 유효 서명 토큰을 보유한 L4 등급. KMS·Spring Security 검증을 "
-        "통과하는 정상 토큰으로 IDOR/enumeration 수행."
+        "탈취한 정상 토큰으로 민감 자기 자원 접근을 반복 수행."
     ),
     "pattern_analysis": "S4",
     "timeline": [

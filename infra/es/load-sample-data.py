@@ -279,7 +279,7 @@ bulk("uba-intelligence-sample", [{
                         "토큰을 사용한 대규모 enumeration 캠페인이 관측됨. 토큰공유 → "
                         "IP-사용자다양성 → 응답민감도/누적유출량으로 전이.",
     "attacker_assessment": "공격자는 유효 서명 토큰을 보유한 L4 등급. KMS·Spring "
-                           "Security 검증을 통과하는 정상 토큰으로 IDOR/enumeration 수행.",
+                           "Security 검증을 통과하는 위조 토큰으로 다계정 subject sweep 수행.",
     "pattern_analysis": "S4",
     "timeline": [
         {"timestamp": iso(now - timedelta(hours=20)),

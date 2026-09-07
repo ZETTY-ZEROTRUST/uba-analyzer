@@ -25,7 +25,7 @@
 | `uba-risk-scores-*` | 0건 |
 | `uba-baseline` | 인덱스 없음 |
 | `uba-intelligence-*` | 0건 |
-| `uba-alerts-*` | 19건 (단 v10 아닌 레거시 `U-LLM-IDOR-RECON` 포맷) |
+| `uba-alerts-*` | 19건 (단 v10 아닌 레거시 `U-LLM-SUB-SWEEP` 계열 포맷) |
 
 → **대시보드를 import해도 데이터가 들어오기 전까지 패널은 빈 상태.** 구조는 미리
 만들어 두고, factor_engine(룰+z-score) 가동 + Phase 3a/3b 실행으로 데이터가 쌓이면
