@@ -126,7 +126,7 @@ if __name__ == "__main__":
     for i in range(30):
         logs.append({**base, "client_ip": "13.124.0.9", "ip_class": "cloud",
                      "receive_epoch": WIN0 + i * 8,
-                     "uri": f"/api/addresses/14000{i:04d}", "user_id": f"14000{i:04d}",
+                     "uri": "/api/addresses", "user_id": f"14000{i:04d}",
                      "user_agent": "python-requests/2.31", "baseline_eligible": True})
     # 정상 사용자: 단일 cgnat IP, 본인 sub 만
     for i in range(6):
@@ -155,7 +155,7 @@ if __name__ == "__main__":
     s5_logs = [
         {**base, "client_ip": f"45.32.10.{i % 20}", "ip_class": "unknown",
          "ip_asn": "AS20473", "receive_epoch": WIN0 + i * 5,
-         "uri": f"/api/addresses/15000{i:04d}", "user_id": f"15000{i:04d}",
+         "uri": "/api/addresses", "user_id": f"15000{i:04d}",
          "user_agent": "python-requests/2.31", "baseline_eligible": True}
         for i in range(40)
     ]
