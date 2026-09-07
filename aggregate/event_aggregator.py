@@ -22,9 +22,9 @@ from scoring.token_violation import compute_token_violation
 
 WINDOW_SECONDS = 300   # 5분
 
-# userId 를 path param 으로 받는 민감 endpoint — IDOR/enumeration 의 표적.
-# 예: /api/addresses/140000511 , /api/orders/140000512
-SENSITIVE_URI_RE = re.compile(r"/(addresses|orders)/\d+")
+# 인증된 subject의 주소·주문 데이터를 반환하는 민감 endpoint.
+# 자기 자원 collection과 소유권 검사를 거치는 상세 경로를 모두 포함한다.
+SENSITIVE_URI_RE = re.compile(r"/(addresses|orders)(?:/|$)")
 
 
 def window_start_epoch(receive_epoch):

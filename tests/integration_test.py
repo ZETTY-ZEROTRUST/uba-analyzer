@@ -84,21 +84,21 @@ def build_dataset():
                                "118.235.82.230", "cgnat_kr", "KR", "/api/users/me", 150))
     for i in range(5):   # attacker 가 같은 토큰 탈취 사용 (cloud / US)
         docs.append(attack_doc(ts(win5 + 60 + i * 10), "140000007", s2_jti, s2_iat,
-                               "13.124.0.9", "cloud", "US", "/api/orders/140000007", 1800))
+                               "13.124.0.9", "cloud", "US", "/api/orders", 1800))
 
     # ── S4 enumeration: 단일 cloud IP 가 5분 내 100명 sub 의 /addresses 조회 ──
     for i in range(100):
         sub = f"1400{20000 + i}"
         docs.append(attack_doc(ts(win5 + (i % 280)), sub, str(uuid.uuid4()), win5,
                                "203.0.113.50", "cloud", "US",
-                               f"/api/addresses/{sub}", 2400))
+                               "/api/addresses", 2400))
 
     # ── S6 Slow & Low: 단일 IP 가 24h 에 걸쳐 40명 sub — 5분엔 안 보이고 24h 윈도우만 ──
     for i in range(40):
         sub = f"1400{30000 + i}"
         docs.append(attack_doc(ts(win24 + i * 2150), sub, str(uuid.uuid4()), win24 + i * 2150,
                                "198.51.100.9", "unknown", "US",
-                               f"/api/addresses/{sub}", 3000))
+                               "/api/addresses", 3000))
     return docs
 
 
