@@ -77,7 +77,7 @@ def should_check_user(user_logs):
     if len(unique_uris) == 1 and len(user_logs) >= 20:
         return True
     
-    # 6. IDOR 패턴
+    # 6. 다계정 subject sweep 패턴
     import re
     user_id_pattern = re.compile(r"/api/users/(\d+)")
     own_id = user_logs[0].get("user_id")
@@ -134,7 +134,7 @@ def analyze_user_with_llm(client, user_id, user_logs):
 {log_summary}
 
 다음 보안 위협 패턴을 검토하세요:
-1. IDOR (Insecure Direct Object Reference): 다른 사용자의 데이터 조회 시도
+1. Forged subject sweep: 다수 사용자 subject로 위조한 token을 통한 데이터 접근
 2. 정찰 (Reconnaissance): 비정상적으로 많은 endpoint 탐색
 3. 권한 상승: 자기 권한 외 endpoint 접근
 4. 토큰 재사용/공유 (jti가 여러 IP에서 사용)
@@ -146,7 +146,7 @@ JSON 형식으로만 응답하세요. 다른 설명 추가하지 마세요.
 {{
   "is_anomaly": true 또는 false,
   "severity": "critical" 또는 "high" 또는 "medium" 또는 "low",
-  "rule_label": "U-LLM-IDOR" 또는 "U-LLM-RECON" 또는 "U-LLM-PRIV-ESC" 등 짧은 레이블,
+  "rule_label": "U-LLM-SUB-SWEEP" 또는 "U-LLM-RECON" 또는 "U-LLM-PRIV-ESC" 등 짧은 레이블,
   "reason": "한 문장 한국어 설명",
   "evidence": ["증거1", "증거2"],
   "mitre_attack": "T1190" 등 MITRE ATT&CK ID (해당하면)
