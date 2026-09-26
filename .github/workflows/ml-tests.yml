@@ -1,0 +1,26 @@
+name: 공개 데이터 학습 검증
+on:
+  pull_request:
+    branches: [develop]
+    paths: ['src/zetty_uba/**', 'tests/ml/**', 'requirements-ml.lock', '.github/workflows/ml-tests.yml']
+  push:
+    branches: [develop]
+    paths: ['src/zetty_uba/**', 'tests/ml/**', 'requirements-ml.lock', '.github/workflows/ml-tests.yml']
+permissions:
+  contents: read
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      PYTHONPATH: src
+      OMP_NUM_THREADS: '2'
+      OPENBLAS_NUM_THREADS: '2'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements-ml.lock
+      - run: python -m unittest discover -s tests/ml -v
+      - run: git diff --check
