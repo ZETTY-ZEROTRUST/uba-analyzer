@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/ZETTY-ZEROTRUST/log-pipeline",
+  "commit": "d61751833ac7dd73393274fb9fe2fed65d58f30e",
+  "branch": "feature/file-http-observations",
+  "rule": "owner snapshot; update from upstream together, do not edit independently",
+  "files": {
+    "contracts/http-observation/v1/schema.json": "5993b65744a9043cba09ffdfff4decd7d98647438a25cd38006d9b380555fef5",
+    "src/zetty_log/__init__.py": "fced1bd9ed0f02ecd30fb1338909533b8f86ab63ba6ed59c94ce32a8799c5675",
+    "src/zetty_log/__main__.py": "69fb59ac9de8ad0eab46fc763eee7bdb9494f22c84030d07ab0d9d7bc4afa539",
+    "src/zetty_log/http.py": "45ddf034cf122bfcb1c8b11d2b57f548e1aea5d96053bb726511075be9568d6c"
+  }
+}

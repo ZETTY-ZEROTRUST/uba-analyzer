@@ -42,7 +42,7 @@ MyDrive/zetty/20260927-full/
 4. 노트북 1~4번을 실행한다. Python/패키지 설치, Drive 연결, 업로드 경로와 저장 모델 목록을 확인한다. `MODE = 'resume'`을 유지한다. 배열만 약 2.66GB이며 모델/분할 파일이 추가된다. SQLite 이력 cache와 원본 ZIP은 resume에 필요하지 않다.
 5. 5번 셀에서 실행한다. 저장된 11개 모델은 재사용하고 중단된 RF는 처음부터 fit한다. 그 뒤 validation으로 선택을 고정하고 12개 후보의 전체 test를 평가한다. exact LOF 두 후보는 원래 계획의 계산 한도로 생략한다. RAM/CPU가 달라 Mac 기준 남은 시간을 Colab에 그대로 적용하지 않는다.
 6. 6번 셀에서 `COMPLETED`, selection, 모든 후보 지표를 확인한다. **RBA final test는 이때 처음 생성된다.** VM이 끊겼으면 `colab-runs/<실행ID>` 백업 디렉터리를 CHECKPOINT로 바꿔 새 실행에서 이어간다. 부분 fit은 다시 수행될 수 있다.
-7. 7번 셀에서 결과 ZIP을 내려받는다. Mac의 새 run 디렉터리에 풀고 [추론 실행 안내](../08-lab-inference/RUNBOOK.md)의 모델 경로·manifest hash를 교체한다. 해당 모델과 같은 RBA 피처를 입력해야 한다.
+7. 7번 셀에서 결과 ZIP을 내려받는다. Mac의 새 run 디렉터리에 보관한다. RBA 결과는 RBA 피처 replay에서 사용해야 하며, [현재 HTTP 파일 pipeline](../10-file-pipeline/RUNBOOK.md)에 넣으면 feature/source 불일치로 거부된다. 공개 RBA 피처 replay는 `zetty_uba.lab run-file`에 해당 모델과 manifest hash를 지정한다.
 8. 작업 후 Colab의 runtime 연결을 해제/삭제한다. 결과는 Drive backup에 남는다.
 
 ## 업로드를 피하려면

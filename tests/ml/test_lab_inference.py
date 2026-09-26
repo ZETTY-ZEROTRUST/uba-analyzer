@@ -8,7 +8,6 @@ import unittest
 import numpy as np
 
 from zetty_uba.lab.core import Detector, Journal, canonical, validate
-from zetty_uba.lab.__main__ import process_message
 
 
 class FixedModel:
@@ -80,27 +79,9 @@ class LabInference(unittest.TestCase):
         self.assertEqual(j.summary()['detections'],0)
         self.assertNotIn('not-json',str(j.db.execute('SELECT * FROM receipts').fetchall()))
 
-    def test_commit_precedes_ack_and_storage_failure_prevents_ack(self):
-        j=Journal(':memory:');d=detector();raw=canonical(observation())
-        class Client:
-            calls=0
-            def xack(self,*args):
-                self.calls+=1
-                self.saved=j.summary()['detections']
-        client=Client();process_message(client,j,d,'1-0',{'payload':raw})
-        self.assertEqual(client.saved,1)
-        j.db.close()
-        with self.assertRaises(Exception):process_message(client,j,d,'2-0',{'payload':raw})
-        self.assertEqual(client.calls,1)
-
-    def test_ack_failure_can_replay_without_duplicate_detection(self):
-        j=Journal(':memory:');d=detector();raw=canonical(observation())
-        class Client:
-            def xack(self,*args):raise ConnectionError('lost ack')
-        for _ in range(2):
-            with self.assertRaises(ConnectionError):process_message(Client(),j,d,'1-0',{'payload':raw})
-        self.assertEqual(j.summary()['detections'],1)
-        self.assertEqual(j.summary()['receipts'],{'EVALUATED':1})
+    def test_storage_failure_does_not_claim_success(self):
+        j=Journal(':memory:');j.db.close()
+        with self.assertRaises(Exception):j.process('delivery',canonical(observation()),detector())
 
     def test_bad_manifest_rejected_before_deserialization(self):
         with tempfile.TemporaryDirectory() as temp:

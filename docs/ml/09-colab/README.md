@@ -29,4 +29,4 @@ Drive checkpoint는 로컬 Colab 디스크로 복사해서 실행한다. 모델 
 
 노트북 및 재개 코드를 준비하는 단계다. **Colab runtime 연결·업로드·학습 실행은 아직 하지 않았다.** 로컬 학습은 중단 상태를 유지한다. 코드 검증은 notebook JSON/구문 및 inference-only 검사로 제한한다.
 
-공식 근거: [Colab FAQ](https://research.google.com/colaboratory/faq.html), [Redis consumer group](https://redis.readthedocs.io/en/v6.4.0/commands.html), [Compose service resource limits](https://docs.docker.com/reference/compose-file/services/).
+공식 근거: [Colab FAQ](https://research.google.com/colaboratory/faq.html), [Compose service resource limits](https://docs.docker.com/reference/compose-file/services/).

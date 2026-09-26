@@ -133,3 +133,7 @@ v1의 baseline 재계산, processing-day index/auto-ID, bulk 부분 실패 무�
 ## 2026-09-27 실험 연결 갱신
 
 `src/zetty_uba/lab`은 공개 feature observation을 전달하는 별도 실험 계약이다. 완료 모델을 mount해 Redis→SQLite/receipt→ACK를 검증했다. C-02 SecurityEvent/AnomalyDetection 공용 schema를 구현했다고 간주하지 않으며 실제 producer/consumer 전환은 별도다. [실제 결과](08-lab-inference/RESULTS.md), [Colab 이전](09-colab/HOWTO.md)을 따른다.
+
+### 최신 범위 변경
+
+사용자 지시로 Redis 없이 파일 pipeline과 탐지까지만 구현한다. `zetty_log` 가명 관측→`zetty_uba.lab.http_file` 피처/추론→SQLite/JSONL이다. 이전 Redis 실험은 실행 경로에서 제거했으며 정책·Auth 연결은 보류한다. 전체 설계의 Redis/MySQL 계획과 이번 구현 범위를 구분한다.

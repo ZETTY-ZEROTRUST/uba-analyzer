@@ -1,2 +1,2 @@
 -r requirements-ml.lock
-redis==6.4.0
+# File inference only; no Redis client.

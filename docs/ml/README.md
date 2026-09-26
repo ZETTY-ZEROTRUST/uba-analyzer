@@ -13,7 +13,7 @@
 
 후속 전체 실험은 기준선·Isolation Forest 네 버전·SGDOneClassSVM 두 버전·KMeans 두 버전·HGB 두 버전·RandomForest·LOF 두 버전을 비교한다. 데이터별 source/feature/threshold/artifact를 분리한다. 실제 학습 완료 여부와 수치는 각 manifest의 COMPLETED 상태 및 결과 표를 따른다. EClog는 제공자의 Guestbook 조건으로 다운로드·학습을 수행하지 못했다.
 
-원본 [구현 계약](IMPLEMENTATION.md)에 따라 기존 7-factor runtime에 신규 모델을 임시 연결하지 않았다. C-02/producer 및 서비스 feature 의미 검증 후 dry-run→로컬 모의 계정 조치를 구현한다. 현재 저장 모델의 공개 replay→Redis→추론→SQLite 실험 경로는 검증했고, 실제 서비스 producer 연결은 별도다.
+원본 [구현 계약](IMPLEMENTATION.md)에 따라 기존 7-factor runtime에 신규 모델을 임시 연결하지 않았다. C-02/producer 및 서비스 feature 의미 검증 후 dry-run→로컬 모의 계정 조치를 구현한다. 현재 실행 경로는 Redis 없는 로그 파일→가명 관측→피처→모델→SQLite/JSONL 탐지다. 실제 Nginx 설정 적용은 Claude 담당과 별도다.
 
 [PR #4](https://github.com/ZETTY-ZEROTRUST/uba-analyzer/pull/4)는 원본 develop에서 분기했다. 사용자 기존 checkout과 실험은 보존했다. 원자료/모델/venv는 Git에 포함하지 않는다. 원격 병합 및 실제 보관 위치는 06 결과 문서에서 확인한다.
 
@@ -24,3 +24,5 @@
 | 09 Colab 이전 | [STAR](09-colab/README.md) | [결과 확인·업로드·재개 안내](09-colab/HOWTO.md) · [노트북](../../notebooks/zetty_rba_colab.ipynb) |
 
 **현재 보관:** `/Users/jjyj2302/zetty/ml-runs/20260927-full`. 최종 평가179개, RBA validation11개. RBA RF/final test와 EClog는 완료가 아니다.
+
+**최신 범위:** [10 파일 pipeline 계획](10-file-pipeline/README.md) · [실행](10-file-pipeline/RUNBOOK.md) · [검증](10-file-pipeline/RESULTS.md). Redis·정책·인증 집행은 제외했다.

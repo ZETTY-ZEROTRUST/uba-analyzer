@@ -54,6 +54,26 @@ def parse_line(line: str):
             request[0], path, status, size)
 
 
+def window_features(rows):
+    """Shared training/inference formula; chronological complete rows, minimum two."""
+    if len(rows) < 2:
+        raise ValueError("insufficient_requests")
+    count = len(rows)
+    intervals = np.diff([row[1] for row in rows])
+    mean_interval = float(intervals.mean())
+    body = [row[5] for row in rows]
+    paths = len({row[3] for row in rows})
+    values = [
+        math.log1p(count), math.log1p(paths), 1 - paths / count,
+        math.log1p(sum(body)), math.log1p(sum(body) / count), math.log1p(max(body)),
+        sum(400 <= row[4] < 500 for row in rows) / count,
+        sum(row[4] >= 500 for row in rows) / count,
+        math.log1p(len({row[2] for row in rows})), math.log1p(mean_interval),
+        float(intervals.std()) / mean_interval if mean_interval else 0.0,
+    ]
+    return values
+
+
 def load(path: Path, *, max_rows=500000, min_requests=2) -> Observations:
     if max_rows < 1 or min_requests < 2:
         raise ValueError('invalid_input_limits')
@@ -89,19 +109,7 @@ def load(path: Path, *, max_rows=500000, min_requests=2) -> Observations:
         # without a source event id. They are contained in the same split/window.
         duplicate_observations += len(rows) - len(set(rows))
         rows.sort(key=lambda row: row[1])
-        count = len(rows)
-        intervals = np.diff([row[1] for row in rows])
-        mean_interval = float(intervals.mean())
-        body = [row[5] for row in rows]
-        paths = len({row[3] for row in rows})
-        values = [
-            math.log1p(count), math.log1p(paths), 1 - paths / count,
-            math.log1p(sum(body)), math.log1p(sum(body) / count), math.log1p(max(body)),
-            sum(400 <= row[4] < 500 for row in rows) / count,
-            sum(row[4] >= 500 for row in rows) / count,
-            math.log1p(len({row[2] for row in rows})), math.log1p(mean_interval),
-            float(intervals.std()) / mean_interval if mean_interval else 0.0,
-        ]
+        values = window_features(rows)
         x.append(values); times.append(start); entities.append(entity)
     audit = {
         'raw_rows': total, 'rejected_rows': dict(rejected), 'window_count': len(x),

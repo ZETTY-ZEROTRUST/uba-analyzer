@@ -160,7 +160,7 @@ class Journal:
             with self.db:
                 self.db.execute('INSERT INTO receipts VALUES(?,?,?,NULL)', (delivery, raw_hash, 'INVALID_INPUT'))
             return 'INVALID_INPUT'
-        # One bounded worker per database. Transaction precedes stream ACK.
+        # One bounded worker per database. Transactions make file replay durable.
         with self.db:
             old = self.db.execute('SELECT input_hash FROM observations WHERE id=?', (observation['observation_id'],)).fetchone()
             if old and old[0] != input_hash:

@@ -1,3 +1,5 @@
+> **과거 실행 기록:** 현재 Redis는 제거됐고 [10 파일 pipeline](../10-file-pipeline/RESULTS.md)으로 대체했다.
+
 # 실험 추론 연결 결과 — STAR
 
 ## S — 실제 문제
