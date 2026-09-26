@@ -41,3 +41,9 @@ develop에서 분기한 독립 작업공간으로 공개 데이터 학습 코드
 - copy 전 원자료 공식 MD5와 크기, copy 후 각 파일 SHA256 일치를 확인했다. 기존 파일이 다르면 덮어쓰지 않는 복사 절차를 사용했다.
 
 원본 `/Users/jjyj2302/zetty/uba-analyzer`의 사용자 작업과 별도 checkout이다. 새 결과를 확인할 때는 위 `uba-training/docs/ml/README.md`를 연다. 원자료·모델은 Git 밖에 있고 각 run에 manifest·split indices·model artifact·실행 소스 snapshot이 있다.
+
+### 병합 시도 결과 — 미완료
+
+2026-09-27 KST, 완료 결과를 PR에 푸시하고 draft를 해제했다. 사용자가 승인한 `develop` 병합을 현재 head SHA와 `merge_method=merge`로 요청했지만 GitHub API는 **HTTP404 Not Found**를 반환했다. 원본 저장소 GET과 PR 조회는 성공하며 계정 permissions는 pull=true, push/maintain/admin=false다. 이 권한 상태에서 병합을 완료할 수 없었다. PR은 열린 상태로 남긴다. branch protection 우회·권한 확대·main 직접 push는 수행하지 않았다.
+
+남은 외부 조치: 원본 저장소 쓰기/병합 권한이 있는 계정이 PR #4를 검토·병합해야 한다. 이는 학습 실패가 아니며 완료된 로컬 결과와 포크 커밋은 보존되어 있다. 서비스 통합·EClog 조건도 앞서 명시한 별도 미완료 항목이다.
