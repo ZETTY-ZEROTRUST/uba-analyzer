@@ -15,12 +15,13 @@ def main():
     prepare.add_argument('--output',type=Path,required=True)
     prepare.add_argument('--catalog',type=Path,default=Path('docs/ml/01-data-audit/sources.json'))
     train=sub.add_parser('train')
+    train.add_argument('--train-fraction',type=float,choices=(.4,.5),default=.5)
     train.add_argument('--prepared',type=Path,required=True)
     train.add_argument('--output',type=Path,required=True)
     args=parser.parse_args()
     if args.command=='train':
         from .runner import run
-        run(args.prepared,args.output)
+        run(args.prepared,args.output,train_fraction=args.train_fraction)
         return
     if args.output.exists():raise ValueError('prepared_output_exists; reuse COMPLETED data or choose a new directory')
     if args.source=='rba':

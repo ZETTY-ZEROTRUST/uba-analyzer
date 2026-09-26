@@ -20,18 +20,18 @@ from .data import open_data, atomic_json
 from .models import candidates, fit, fit_scaler
 
 
-def split_four(times,embargo):
-    if embargo<0 or not np.isfinite(times).all():raise ValueError('invalid_split_input')
+def split_four(times,embargo,train_fraction=.5):
+    if embargo<0 or not 0<train_fraction<.65 or not np.isfinite(times).all():raise ValueError('invalid_split_input')
     unique=np.unique(times)
     if len(unique)<100:raise ValueError('insufficient_unique_times')
-    a,b,c=(float(unique[int(len(unique)*fraction)]) for fraction in (.5,.65,.8))
+    a,b,c=(float(unique[int(len(unique)*fraction)]) for fraction in (train_fraction,.65,.8))
     del unique
     parts={'train':np.flatnonzero(times<a),
            'calibration':np.flatnonzero((times>=a+embargo)&(times<b)),
            'validation':np.flatnonzero((times>=b+embargo)&(times<c)),
            'test':np.flatnonzero(times>=c+embargo)}
     if any(len(indices)<20 for indices in parts.values()):raise ValueError('insufficient_split_rows')
-    return parts,{'method':'unique-time 50/15/15/20, source embargo at each boundary',
+    return parts,{'method':'unique-time four-way split, source embargo at each boundary','fractions':[train_fraction,.65-train_fraction,.15,.2],
         'boundaries':[a,b,c],'embargo_seconds':embargo,'excluded_rows':len(times)-sum(map(len,parts.values())),
         'counts':{k:len(v) for k,v in parts.items()},
         'ranges':{k:[float(times[v].min()),float(times[v].max())] for k,v in parts.items()}}
@@ -89,7 +89,7 @@ def select_model(results):
             'frozen_before_test':True}
 
 
-def run(directory,output,*,specs=None):
+def run(directory,output,*,specs=None,train_fraction=.5):
     directory,output=Path(directory),Path(output)
     arrays,meta=open_data(directory)
     for name,info in meta['files'].items():
@@ -98,7 +98,7 @@ def run(directory,output,*,specs=None):
     package=Path(__file__).resolve().parents[1]
     if output.resolve().is_relative_to(package):raise ValueError('output_inside_source')
     identity={'dataset_sha256':digest_file(directory/'dataset.json'),'code_sha256':code_hash(),
-              'candidates':specs,'format':'zetty-full-study/2','threshold_tail':.01}
+              'candidates':specs,'format':'zetty-full-study/2','threshold_tail':.01,'train_fraction':train_fraction}
     plan_hash=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
     if output.exists():
         existing=json.loads((output/'study.json').read_text())
@@ -114,12 +114,16 @@ def run(directory,output,*,specs=None):
                   'environment':{'python':platform.python_version(),'machine':platform.machine(),'thread_limit':2,
                       'packages':{name:version(name) for name in ('numpy','scipy','scikit-learn','joblib','threadpoolctl','pyarrow')}}}
         atomic_json(output/'study.json',manifest)
-    began=time.perf_counter();parts,split=split_four(arrays['times'],meta['embargo_seconds'])
+    began=time.perf_counter();parts,split=split_four(arrays['times'],meta['embargo_seconds'],train_fraction)
     train=parts['train'];labels=arrays['labels'];x=arrays['x']
     reference=train[labels[train]==0] if meta['label_kind']=='task' else train
     calibration=parts['calibration'][labels[parts['calibration']]==0] if meta['label_kind']=='task' else parts['calibration']
     supervised=train[labels[train]!=-1]
-    if len(reference)<100 or len(calibration)<100:raise ValueError('insufficient_reference_rows')
+    if len(reference)<100 or len(calibration)<100:
+        manifest.update(status='FAILED',failure_type='ValueError',failure_code='insufficient_reference_rows',
+                        split=split,eligible_reference_train=len(reference),eligible_reference_calibration=len(calibration))
+        atomic_json(output/'study.json',manifest)
+        raise ValueError('insufficient_reference_rows')
     np.savez_compressed(output/'split_indices.npz',**parts,reference_train=reference,reference_calibration=calibration)
     manifest.update(split=split,split_sha256=digest_file(output/'split_indices.npz'),
         eligible_reference_train=len(reference),eligible_reference_calibration=len(calibration),

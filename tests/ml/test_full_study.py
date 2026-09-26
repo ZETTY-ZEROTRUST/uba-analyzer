@@ -50,3 +50,27 @@ class FullStudy(unittest.TestCase):
                 self.assertTrue(model['full_eligible_training'])
             self.assertTrue(result['selection']['frozen_before_test'])
             self.assertEqual(run(data,Path(temp)/'run',specs=selected),result)
+
+class ExpandedCalibration(unittest.TestCase):
+    def test_validation_test_unchanged_when_calibration_expands(self):
+        times=np.arange(1000)*300
+        initial,_=split_four(times,600)
+        expanded,_=split_four(times,600,train_fraction=.4)
+        np.testing.assert_array_equal(initial['validation'],expanded['validation'])
+        np.testing.assert_array_equal(initial['test'],expanded['test'])
+        self.assertGreater(len(expanded['calibration']),len(initial['calibration']))
+        self.assertLess(len(expanded['train']),len(initial['train']))
+        with self.assertRaises(ValueError):split_four(times,600,train_fraction=.7)
+
+class FailureState(unittest.TestCase):
+    def test_insufficient_reference_is_failed_not_running(self):
+        import json
+        with tempfile.TemporaryDirectory() as temp:
+            data=Path(temp)/'data';sink=NumericSink(data,('a',))
+            for i in range(1000):sink.append([float(i)],i*300,'0'*64,-1)
+            sink.finish({'source':'fixture','label_kind':'task','embargo_seconds':300,'feature_version':'fixture'})
+            output=Path(temp)/'run'
+            with self.assertRaisesRegex(ValueError,'insufficient_reference_rows'):run(data,output,specs=[])
+            state=json.loads((output/'study.json').read_text())
+            self.assertEqual(state['status'],'FAILED')
+            self.assertEqual(state['eligible_reference_train'],0)
