@@ -1,3 +1,6 @@
+> **2026-09-27 현재:** 로컬 학습은 발열로 중단. 최종 평가 179개·RBA validation 11개 보존. [현재 결과](docs/ml/07-full-data-study/RESULTS.md) · [추론 Docker 실행](docs/ml/08-lab-inference/RUNBOOK.md) · [Colab 재개와 모델 확인](docs/ml/09-colab/HOWTO.md).
+> 신규 실험 경로는 `python -m zetty_uba.lab`이며 기존 v1 설명·명령은 아래에 보존되어 있습니다.
+
 > **2026-09-26 신규 공개 데이터 학습:** [단계별 STAR 기록](docs/ml/README.md) · [실행 방법](docs/ml/04-model-training/RUNBOOK.md).
 > `src/zetty_uba`는 독립 offline 학습 경로다. 아래 문서는 보존된 v1 runtime을 설명하며 신규 모델의 서비스 연결 완료를 뜻하지 않는다.
 

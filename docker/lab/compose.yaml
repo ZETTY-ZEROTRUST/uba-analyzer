@@ -1,0 +1,51 @@
+name: zetty-uba-lab
+services:
+  redis-lab:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "128mb", "--maxmemory-policy", "noeviction"]
+    cpus: 0.25
+    mem_limit: 192m
+    volumes:
+      - redis-lab-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      timeout: 1s
+      retries: 15
+    networks: [lab]
+  uba:
+    build:
+      context: ../..
+      dockerfile: docker/lab/Dockerfile
+    image: zetty-uba-lab:local
+    cpus: 0.5
+    mem_limit: 1g
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    environment:
+      OMP_NUM_THREADS: "1"
+      OPENBLAS_NUM_THREADS: "1"
+      MKL_NUM_THREADS: "1"
+    volumes:
+      - type: bind
+        source: ${ZETTY_LAB_RUN:?set completed trusted run directory}
+        target: /model
+        read_only: true
+      - type: bind
+        source: ${ZETTY_LAB_INPUT_DIR:?set replay input directory}
+        target: /input
+        read_only: true
+      - results-lab:/state
+    command: ["worker", "--run", "/model", "--manifest-sha256", "${ZETTY_LAB_MANIFEST_SHA256:?set pinned study hash}", "--database", "/state/results.sqlite", "--max-messages", "1000", "--idle-seconds", "10"]
+    depends_on:
+      redis-lab:
+        condition: service_healthy
+    networks: [lab]
+networks:
+  lab:
+    internal: true
+volumes:
+  redis-lab-data:
+  results-lab:

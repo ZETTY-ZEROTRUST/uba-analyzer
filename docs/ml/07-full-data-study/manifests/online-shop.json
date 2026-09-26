@@ -1,0 +1,1368 @@
+{
+  "status": "COMPLETED",
+  "plan_sha256": "80fc5de74bd74d8407b8cc6538aefcd21f97dc21bd532b322153102ada51cd28",
+  "dataset_sha256": "29022ccc004ef791ab41b7d81a13a09637a492f51b748c847793bea2943e1749",
+  "code_sha256": "d0a735e35c8337ec63a7304e276963b8b9e9a7478b4b268086056e9ac9b078fa",
+  "candidates": [
+    {
+      "id": "standard-distance-v2",
+      "kind": "distance",
+      "seed": 42
+    },
+    {
+      "id": "if-t100-s512-seed42",
+      "kind": "if",
+      "trees": 100,
+      "samples": 512,
+      "seed": 42
+    },
+    {
+      "id": "if-t100-s512-seed2026",
+      "kind": "if",
+      "trees": 100,
+      "samples": 512,
+      "seed": 2026
+    },
+    {
+      "id": "if-t200-s2048-seed42",
+      "kind": "if",
+      "trees": 200,
+      "samples": 2048,
+      "seed": 42
+    },
+    {
+      "id": "if-t200-s2048-seed2026",
+      "kind": "if",
+      "trees": 200,
+      "samples": 2048,
+      "seed": 2026
+    },
+    {
+      "id": "sgdocsvm-linear-v2",
+      "kind": "sgd",
+      "kernel": "linear",
+      "epochs": 2,
+      "nu": 0.01,
+      "seed": 42
+    },
+    {
+      "id": "sgdocsvm-rbf64-v2",
+      "kind": "sgd",
+      "kernel": "rbf",
+      "components": 64,
+      "gamma": 0.1,
+      "epochs": 2,
+      "nu": 0.01,
+      "seed": 42
+    },
+    {
+      "id": "kmeans32-v2",
+      "kind": "kmeans",
+      "clusters": 32,
+      "epochs": 3,
+      "seed": 42
+    },
+    {
+      "id": "kmeans128-v2",
+      "kind": "kmeans",
+      "clusters": 128,
+      "epochs": 3,
+      "seed": 42
+    },
+    {
+      "id": "hgb100-leaf15-v2",
+      "kind": "hgb",
+      "iterations": 100,
+      "leaves": 15,
+      "l2": 1.0,
+      "seed": 42
+    },
+    {
+      "id": "hgb200-leaf31-v2",
+      "kind": "hgb",
+      "iterations": 200,
+      "leaves": 31,
+      "l2": 3.0,
+      "seed": 42
+    },
+    {
+      "id": "rf100-depth12-v2",
+      "kind": "rf",
+      "trees": 100,
+      "depth": 12,
+      "leaf_min": 10,
+      "seed": 42
+    },
+    {
+      "id": "lof20-full-v2",
+      "kind": "lof",
+      "neighbors": 20,
+      "seed": 42
+    },
+    {
+      "id": "lof50-full-v2",
+      "kind": "lof",
+      "neighbors": 50,
+      "seed": 42
+    }
+  ],
+  "format": "zetty-full-study/2",
+  "threshold_tail": 0.01,
+  "dataset": {
+    "source": "online-shop-18895701",
+    "feature_version": "public-http-5min-v1-f32-v2",
+    "label_kind": "unknown",
+    "source_manifest": {
+      "bytes": 28630570,
+      "md5": "725822e13e09281b498e7cd5d082a039",
+      "sha256": "d60f8cf9a907a7d70df201e8d931b5df6d3d384e21ed058551cc154089b84f59"
+    },
+    "audit": {
+      "raw_rows": 178939,
+      "rejected_rows": {},
+      "window_count": 15463,
+      "excluded_windows": {
+        "capture_boundary": 146,
+        "insufficient_requests": 21154
+      },
+      "out_of_order_rows": 0,
+      "identical_requests_retained": 2702,
+      "label_policy": "unknown; unsupervised contaminated-reference experiment",
+      "identity": "public pseudonymous client+UA; not authenticated user",
+      "time_basis": "UTC epoch seconds",
+      "window_seconds": 300,
+      "completeness": "capture boundaries excluded; collector gaps remain unknown",
+      "session_leakage_limit": "no session id; only nonoverlapping windows guaranteed"
+    },
+    "embargo_seconds": 300,
+    "previous_test_inspected": true,
+    "builder_sha256": "27bbf3b7f8e53caaefcc161f4e77deb464ec8864820d71f0de101552bd4f8d65",
+    "status": "COMPLETED",
+    "rows": 15463,
+    "names": [
+      "log_request_count",
+      "log_unique_paths",
+      "repeat_path_ratio",
+      "log_body_bytes_sum",
+      "log_body_bytes_mean",
+      "log_body_bytes_max",
+      "status_4xx_ratio",
+      "status_5xx_ratio",
+      "log_unique_methods",
+      "log_interval_mean_seconds",
+      "interval_cv"
+    ],
+    "dtype": "float32",
+    "entity_storage": "raw 32-byte SHA256 of source-namespaced public identity",
+    "files": {
+      "x": {
+        "sha256": "37961b2385d7bfc9aee62d89a1d8b40d09189287f2ad338379b60e32ffcbadfd",
+        "bytes": 680372
+      },
+      "times": {
+        "sha256": "efa03750af9b8c7f80f80ef70f9bd8688d1ff3da80435aea91c8bd22960c6b9c",
+        "bytes": 123704
+      },
+      "entities": {
+        "sha256": "de0853ea3622ed76c083939a1fe5b878120339b2b0f0edc0d814d5026fd4a6fe",
+        "bytes": 494816
+      },
+      "labels": {
+        "sha256": "463eee16543c39f6b7949b2016ba48b9c6410ea72208978cfcc4ead5fed484c5",
+        "bytes": 15463
+      }
+    }
+  },
+  "models": {
+    "standard-distance-v2": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 2.2089952835813165e-06,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 1,
+      "specification": {
+        "id": "standard-distance-v2",
+        "kind": "distance",
+        "seed": 42
+      },
+      "artifact": {
+        "file": "standard-distance-v2.joblib",
+        "sha256": "b5f224343558931c11b85683cb542069c588cb7db03eba7c9829df2579217445",
+        "bytes": 1007
+      },
+      "threshold": 5.155142307281494,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.00022483400243800133,
+      "validation": {
+        "rows": 3121,
+        "flagged": 21,
+        "flag_rate": 0.0067286126241589235,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.000243875001615379,
+      "test": {
+        "rows": 4327,
+        "flagged": 44,
+        "flag_rate": 0.010168708111855789,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 44,
+        "flag_rate": 0.03125,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.00035908399877371266,
+      "test_ms_per_row": 8.298682661745151e-05
+    },
+    "if-t100-s512-seed42": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.06540554200182669,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 1,
+      "specification": {
+        "id": "if-t100-s512-seed42",
+        "kind": "if",
+        "trees": 100,
+        "samples": 512,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "if-t100-s512-seed42.joblib",
+        "sha256": "a70927d3b2c617fecf4b62f751204b3377e710c7a488ce45cf1cc78e0ee9780f",
+        "bytes": 569629
+      },
+      "threshold": 0.6994570173536961,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.013814042002195492,
+      "validation": {
+        "rows": 3121,
+        "flagged": 32,
+        "flag_rate": 0.01025312399871836,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.015820624998013955,
+      "test": {
+        "rows": 4327,
+        "flagged": 44,
+        "flag_rate": 0.010168708111855789,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 42,
+        "flag_rate": 0.014388489208633094,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 2,
+        "flag_rate": 0.0014204545454545455,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.016012125000997912,
+      "test_ms_per_row": 0.0037005142133112808
+    },
+    "if-t100-s512-seed2026": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.058396583001012914,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 1,
+      "specification": {
+        "id": "if-t100-s512-seed2026",
+        "kind": "if",
+        "trees": 100,
+        "samples": 512,
+        "seed": 2026
+      },
+      "artifact": {
+        "file": "if-t100-s512-seed2026.joblib",
+        "sha256": "5fe41c14a7b798882909d85c6e178247810c735e0d31a74705ed0fc822e8fe08",
+        "bytes": 556606
+      },
+      "threshold": 0.6881782976921104,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.01242912500310922,
+      "validation": {
+        "rows": 3121,
+        "flagged": 34,
+        "flag_rate": 0.010893944248638257,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.014260584001021925,
+      "test": {
+        "rows": 4327,
+        "flagged": 47,
+        "flag_rate": 0.01086202911948232,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 44,
+        "flag_rate": 0.015073655361425145,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 3,
+        "flag_rate": 0.002130681818181818,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.0159639999983483,
+      "test_ms_per_row": 0.0036893921882015946
+    },
+    "if-t200-s2048-seed42": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.14341895899997326,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 1,
+      "specification": {
+        "id": "if-t200-s2048-seed42",
+        "kind": "if",
+        "trees": 200,
+        "samples": 2048,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "if-t200-s2048-seed42.joblib",
+        "sha256": "a18f3d67a8ccdacb37f927fc042e0189364aa4367f82b805635559b11c95e227",
+        "bytes": 2952989
+      },
+      "threshold": 0.6380033288184778,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.014563165997969918,
+      "validation": {
+        "rows": 3121,
+        "flagged": 34,
+        "flag_rate": 0.010893944248638257,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.030422875002841465,
+      "test": {
+        "rows": 4327,
+        "flagged": 53,
+        "flag_rate": 0.012248671134735382,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 22,
+        "flag_rate": 0.0075368276807125725,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 31,
+        "flag_rate": 0.022017045454545456,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.030602792001445778,
+      "test_ms_per_row": 0.007072519528875844
+    },
+    "if-t200-s2048-seed2026": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.13571424999827286,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 1,
+      "specification": {
+        "id": "if-t200-s2048-seed2026",
+        "kind": "if",
+        "trees": 200,
+        "samples": 2048,
+        "seed": 2026
+      },
+      "artifact": {
+        "file": "if-t200-s2048-seed2026.joblib",
+        "sha256": "a79d12a7c88c0c1a5fc902c12bb3d1fe90800ea8ec24bf84da5d304a7db29dd8",
+        "bytes": 2955283
+      },
+      "threshold": 0.6369372384122205,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.028643416000704747,
+      "validation": {
+        "rows": 3121,
+        "flagged": 31,
+        "flag_rate": 0.00993271387375841,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.028817999998864252,
+      "test": {
+        "rows": 4327,
+        "flagged": 47,
+        "flag_rate": 0.01086202911948232,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 22,
+        "flag_rate": 0.0075368276807125725,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 25,
+        "flag_rate": 0.01775568181818182,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.02891487500164658,
+      "test_ms_per_row": 0.006682430090512267
+    },
+    "sgdocsvm-linear-v2": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.002362916995480191,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 2,
+      "specification": {
+        "id": "sgdocsvm-linear-v2",
+        "kind": "sgd",
+        "kernel": "linear",
+        "epochs": 2,
+        "nu": 0.01,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "sgdocsvm-linear-v2.joblib",
+        "sha256": "897a7ace32b09ab6cca46be350aa4c0a9967897ed64a0bbf7341b3da1dbe227d",
+        "bytes": 1562
+      },
+      "threshold": -6.440963813148388,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 15,
+        "flag_rate": 0.006772009029345372,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.0002626670029712841,
+      "validation": {
+        "rows": 3121,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.00045720900379819795,
+      "test": {
+        "rows": 4327,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.0004114579933229834,
+      "test_ms_per_row": 9.509082350889378e-05
+    },
+    "sgdocsvm-rbf64-v2": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.004728708001493942,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 2,
+      "specification": {
+        "id": "sgdocsvm-rbf64-v2",
+        "kind": "sgd",
+        "kernel": "rbf",
+        "components": 64,
+        "gamma": 0.1,
+        "epochs": 2,
+        "nu": 0.01,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "sgdocsvm-rbf64-v2.joblib",
+        "sha256": "7bf554d7970f90e7b75f97fea84d1b85cdd5d064b1107768a09e448cd2e673af",
+        "bytes": 5132
+      },
+      "threshold": -0.05599492180528465,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.004440374999830965,
+      "validation": {
+        "rows": 3121,
+        "flagged": 38,
+        "flag_rate": 0.012175584748478052,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.0006820420021540485,
+      "test": {
+        "rows": 4327,
+        "flagged": 57,
+        "flag_rate": 0.013173099144904091,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 20,
+        "flag_rate": 0.006851661527920521,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 37,
+        "flag_rate": 0.026278409090909092,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.0009942920005414635,
+      "test_ms_per_row": 0.00022978784389680228
+    },
+    "kmeans32-v2": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.01311458300187951,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 3,
+      "specification": {
+        "id": "kmeans32-v2",
+        "kind": "kmeans",
+        "clusters": 32,
+        "epochs": 3,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "kmeans32-v2.joblib",
+        "sha256": "e2bcc2b1a6a1901e059de7512d2ae38d93fe5c4329ffe91f5c4c6bab10294553",
+        "bytes": 11748
+      },
+      "threshold": 1.9941537380218506,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 19,
+        "flag_rate": 0.008577878103837472,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.001741958003549371,
+      "validation": {
+        "rows": 3121,
+        "flagged": 33,
+        "flag_rate": 0.010573534123678308,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.0007414170031552203,
+      "test": {
+        "rows": 4327,
+        "flagged": 49,
+        "flag_rate": 0.011324243124566674,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 9,
+        "flag_rate": 0.003083247687564234,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 40,
+        "flag_rate": 0.028409090909090908,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.0010081669970531948,
+      "test_ms_per_row": 0.00023299445275091167
+    },
+    "kmeans128-v2": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.040909667004598305,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 3,
+      "specification": {
+        "id": "kmeans128-v2",
+        "kind": "kmeans",
+        "clusters": 128,
+        "epochs": 3,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "kmeans128-v2.joblib",
+        "sha256": "3b92f907a795ea88721c8ad298897d5e266844743156c71ee29f80c25fbc39fe",
+        "bytes": 17321
+      },
+      "threshold": 1.2672598361968994,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.0010314159953850321,
+      "validation": {
+        "rows": 3121,
+        "flagged": 36,
+        "flag_rate": 0.011534764498558154,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.0013021669947193004,
+      "test": {
+        "rows": 4327,
+        "flagged": 67,
+        "flag_rate": 0.01548416917032586,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 15,
+        "flag_rate": 0.0051387461459403904,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 52,
+        "flag_rate": 0.036931818181818184,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.0019281669956399128,
+      "test_ms_per_row": 0.0004456128947630952
+    },
+    "hgb100-leaf15-v2": {
+      "status": "SKIPPED",
+      "reason": "training_requires_both_task_classes",
+      "specification": {
+        "id": "hgb100-leaf15-v2",
+        "kind": "hgb",
+        "iterations": 100,
+        "leaves": 15,
+        "l2": 1.0,
+        "seed": 42
+      }
+    },
+    "hgb200-leaf31-v2": {
+      "status": "SKIPPED",
+      "reason": "training_requires_both_task_classes",
+      "specification": {
+        "id": "hgb200-leaf31-v2",
+        "kind": "hgb",
+        "iterations": 200,
+        "leaves": 31,
+        "l2": 3.0,
+        "seed": 42
+      }
+    },
+    "rf100-depth12-v2": {
+      "status": "SKIPPED",
+      "reason": "training_requires_both_task_classes",
+      "specification": {
+        "id": "rf100-depth12-v2",
+        "kind": "rf",
+        "trees": 100,
+        "depth": 12,
+        "leaf_min": 10,
+        "seed": 42
+      }
+    },
+    "lof20-full-v2": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.0465113750033197,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 1,
+      "specification": {
+        "id": "lof20-full-v2",
+        "kind": "lof",
+        "neighbors": 20,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "lof20-full-v2.joblib",
+        "sha256": "5cf62868d5022ce32d1a67e5d0725a7208df1d16654eb913c56030ceb7116de7",
+        "bytes": 416383
+      },
+      "threshold": 1070342848.0,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.013227625000581611,
+      "validation": {
+        "rows": 3121,
+        "flagged": 35,
+        "flag_rate": 0.011214354373598205,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.03125854200334288,
+      "test": {
+        "rows": 4327,
+        "flagged": 61,
+        "flag_rate": 0.014097527155072799,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 9,
+        "flag_rate": 0.003083247687564234,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 52,
+        "flag_rate": 0.036931818181818184,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.03082833300140919,
+      "test_ms_per_row": 0.007124643633327754
+    },
+    "lof50-full-v2": {
+      "status": "EVALUATED",
+      "fit_rows": 5658,
+      "fit_seconds": 0.0675603339986992,
+      "fit_label_counts": {
+        "-1": 5658
+      },
+      "full_eligible_training": true,
+      "epochs": 1,
+      "specification": {
+        "id": "lof50-full-v2",
+        "kind": "lof",
+        "neighbors": 50,
+        "seed": 42
+      },
+      "artifact": {
+        "file": "lof50-full-v2.joblib",
+        "sha256": "9a4e3f82e627931105d7a742b8ee710aff17663f334282a950a9ecb88b83e7b8",
+        "bytes": 759159
+      },
+      "threshold": 5999089664.0,
+      "threshold_rule": "99% higher quantile; strict >",
+      "calibration": {
+        "rows": 2215,
+        "flagged": 22,
+        "flag_rate": 0.009932279909706547,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2215,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "calibration_seconds": 0.03194370900018839,
+      "validation": {
+        "rows": 3121,
+        "flagged": 46,
+        "flag_rate": 0.014738865748157642,
+        "labeled_rows": 0,
+        "unknown_label_rows": 3121,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "validation_seconds": 0.031854583001404535,
+      "test": {
+        "rows": 4327,
+        "flagged": 46,
+        "flag_rate": 0.010630922116940143,
+        "labeled_rows": 0,
+        "unknown_label_rows": 4327,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "seen_test": {
+        "rows": 2919,
+        "flagged": 9,
+        "flag_rate": 0.003083247687564234,
+        "labeled_rows": 0,
+        "unknown_label_rows": 2919,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "unseen_test": {
+        "rows": 1408,
+        "flagged": 37,
+        "flag_rate": 0.026278409090909092,
+        "labeled_rows": 0,
+        "unknown_label_rows": 1408,
+        "confusion": null,
+        "precision": null,
+        "recall": null,
+        "fpr": null,
+        "average_precision": null,
+        "roc_auc": null,
+        "wilson95": null
+      },
+      "test_seconds": 0.04536970800108975,
+      "test_ms_per_row": 0.010485257222345678
+    }
+  },
+  "environment": {
+    "python": "3.12.13",
+    "machine": "arm64",
+    "thread_limit": 2,
+    "packages": {
+      "numpy": "2.2.6",
+      "scipy": "1.15.3",
+      "scikit-learn": "1.7.2",
+      "joblib": "1.5.2",
+      "threadpoolctl": "3.6.0",
+      "pyarrow": "21.0.0"
+    }
+  },
+  "split": {
+    "method": "unique-time 50/15/15/20, source embargo at each boundary",
+    "boundaries": [
+      1765105200.0,
+      1765118100.0,
+      1765131000.0
+    ],
+    "embargo_seconds": 300,
+    "excluded_rows": 142,
+    "counts": {
+      "train": 5658,
+      "calibration": 2215,
+      "validation": 3121,
+      "test": 4327
+    },
+    "ranges": {
+      "train": [
+        1765062300.0,
+        1765104900.0
+      ],
+      "calibration": [
+        1765105500.0,
+        1765117800.0
+      ],
+      "validation": [
+        1765118400.0,
+        1765130700.0
+      ],
+      "test": [
+        1765131300.0,
+        1765148100.0
+      ]
+    }
+  },
+  "split_sha256": "07b3898ce81b997516785ca4bcfe10e6d68ccf5230da517d434fa40a79974b5b",
+  "eligible_reference_train": 5658,
+  "eligible_reference_calibration": 2215,
+  "split_label_counts": {
+    "train": {
+      "-1": 5658
+    },
+    "calibration": {
+      "-1": 2215
+    },
+    "validation": {
+      "-1": 3121
+    },
+    "test": {
+      "-1": 4327
+    }
+  },
+  "reference_policy": "unlabeled contaminated reference; NOT reviewed normal",
+  "selection": {
+    "selected_model": null,
+    "validation_fpr_limit": 0.02,
+    "rule": "maximize validation recall, then precision, then lower FPR, then stable model id",
+    "eligible_ranking": [],
+    "evidence": "no eligible labeled comparison",
+    "selection_input": "validation only; no test metrics or scores used",
+    "frozen_before_test": true
+  },
+  "last_process_seconds": 1.742758042004425,
+  "process_peak_rss_mib": 187.359375
+}

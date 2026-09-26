@@ -1,6 +1,6 @@
 # 신규 UBA 구현 안내 — 데이터·모델·대응 분리
 
-> 2026-09-26 · offline 학습 CLI 구현 진행, 서비스 실행 구조는 미완료. 실제 결과는 [단계별 기록](README.md)을 따른다.
+> 2026-09-26 · 공개 자료 학습과 lab replay 추론 구현. 로컬 학습은 중단, 실제 서비스 실행 구조는 미완료. 실제 결과는 [단계별 기록](README.md)을 따른다.
 > [루트 지침](../../../AGENTS.md) → [인수인계](../../../docs/HANDOFF.md) → [전체 합의](../../../IMPLEMENTATION_AGREEMENT.md) → 이 문서 순서로 읽는다.
 
 ## 1. 범위와 현재 자산
@@ -129,3 +129,7 @@ Outbox 원본·receipt를 복구 근거로 보존하며 Redis AOF만을 원본�
 v1의 baseline 재계산, processing-day index/auto-ID, bulk 부분 실패 무시, profile 반복 누적은 재발 방지 사례다. 구 코드를 먼저 고쳐 새 모델을 그 점수 체계에 붙이는 작업으로 바꾸지 않는다.
 
 다음 작업자는 repo status·사용자 실험과 [실행 결과](README.md)를 확인하고 미완료 데이터 조건 및 C-02 서비스 선행 조건부터 이어간다. Git은 루트 지침과 사용자 지시를 따른다. 신규 평가 보고서는 source·모델·환경·표본·분모·실행 결과를 포함한다.
+
+## 2026-09-27 실험 연결 갱신
+
+`src/zetty_uba/lab`은 공개 feature observation을 전달하는 별도 실험 계약이다. 완료 모델을 mount해 Redis→SQLite/receipt→ACK를 검증했다. C-02 SecurityEvent/AnomalyDetection 공용 schema를 구현했다고 간주하지 않으며 실제 producer/consumer 전환은 별도다. [실제 결과](08-lab-inference/RESULTS.md), [Colab 이전](09-colab/HOWTO.md)을 따른다.
