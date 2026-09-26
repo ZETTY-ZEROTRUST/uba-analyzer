@@ -16,7 +16,7 @@ NAMES = tuple(
 )
 
 
-def load(path: Path, *, max_rows=250000) -> Observations:
+def load(path: Path, *, max_rows=250000, source=SOURCE) -> Observations:
     import pyarrow.parquet as pq
     parquet = pq.ParquetFile(path)
     if parquet.metadata.num_rows > max_rows:
@@ -34,7 +34,7 @@ def load(path: Path, *, max_rows=250000) -> Observations:
     raw_ids = list(zip(table['user_id'].to_pylist(), table['entity'].to_pylist()))
     if any(user is None or entity is None for user, entity in raw_ids):
         raise ValueError('missing_identity')
-    entities = np.asarray([entity_key(SOURCE, str(user), str(entity)) for user, entity in raw_ids])
+    entities = np.asarray([entity_key(source, str(user), str(entity)) for user, entity in raw_ids])
     seen, keep, duplicates, conflicts = {}, [], 0, set()
     for i, (time, entity) in enumerate(zip(times, entities)):
         key = (int(time), str(entity))
@@ -57,8 +57,8 @@ def load(path: Path, *, max_rows=250000) -> Observations:
                                     'all SMTP', 'compromised indicators', 'SSL alerts/versions'],
         'time_basis': 'source-naive timestamp ordered as published; timezone unverified',
         'window_width': 'not established from metadata; 24h split embargo is conservative, not proof',
-        'label_policy': 'phishing task only; label 0 training, -1 excluded',
+        'label_policy': f'{source} task only; label 0 training, -1 excluded',
         'deployment_limit': 'offline benchmark only; feature units/window semantics need further audit',
     }
-    return Observations(SOURCE, 'rbd-phishing-allowlist-v1', NAMES, x[selected], times[selected],
+    return Observations(source, 'rbd-behavior-allowlist-v2', NAMES, x[selected], times[selected],
                         entities[selected], labels[selected], audit).validate()

@@ -31,3 +31,11 @@ Online Shop 전체 원본, RBA ZIP 내 CSV 전체, RBD24의 12개 task/device �
 ## R — 실행 전
 
 아직 전체 학습을 완료하지 않았다. 아래 단계별 결과에 실제 명령·행 수·비용·성능·오류 및 개선을 추가한다. 기존 1차 결과는 별도 보존한다.
+
+## 구현 전 확정한 후보 목록과 버전
+
+`standard-distance-v2`, IF(tree100/sample512, tree200/sample2048) 각각 seed42/2026 네 버전, SGDOneClassSVM(linear/RBF64) 두 버전, KMeans32/128 두 버전, HGB100-leaf15/HGB200-leaf31 두 버전, RF100-depth12, LOF20/50을 고정했다. 최대 14개 후보이며 지도학습은 train에 두 클래스가 있을 때만 수행한다. 정확 LOF는 reference train25만 개 초과 시 미실행을 명시한다. RBA에 대해 작은 표본 LOF를 full 학습이라고 보고하지 않는다.
+
+v2 특징은 기존 계산식을 float32 disk 배열로 저장한다. StandardScaler는 전체 후보 reference train으로 partial_fit한다. SGD/KMeans만 표준화 값을 [-10,10]으로 고정 clipping하며 이 선택은 최종 평가 전에 고정했다. 다른 모델은 원 특징 또는 unclipped 표준화를 사용한다. 통계 v2는 train 평균/표준편차 거리이며, v1 중앙값/IQR과 구분한다. IF는 전체 eligible train을 입력으로 받지만 tree별 내부 sampling을 한다. streaming 모델은 모든 eligible train 행을 매 epoch 처리한다.
+
+추가 검증: 전체 이력이 cache에서 빠졌다가 돌아와도 결과가 유지되는 fixture, 4-way split/embargo, 최종 test 값을 바꿔도 선택이 달라지지 않는 fixture, 14개 후보의 실제 소규모 fit·평가·동일 계획 재개를 포함한 총21개 테스트를 통과한 뒤 전체 모델 학습을 시작한다.
