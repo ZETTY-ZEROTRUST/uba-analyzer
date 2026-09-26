@@ -1,0 +1,445 @@
+{
+  "status": "COMPLETED",
+  "created_at": "2026-09-26T15:06:12.191652+00:00",
+  "feature_dtype": "float64",
+  "observation_count": 249986,
+  "format": "zetty-offline-model/1",
+  "source": "rba-6782156",
+  "source_manifest": {
+    "bytes": 1093700330,
+    "md5": "cc1b1078b3929650e6c08678caffcc57",
+    "sha256": "ca1d974e97aebfb30878a613f4ca5c793860a98ba2acb5185c9bc610d7432a33",
+    "url": "https://zenodo.org/records/6782156",
+    "license": "CC-BY-4.0"
+  },
+  "feature_version": "synthetic-login-causal-v1",
+  "feature_names": [
+    "log_prior_attempts",
+    "first_observation",
+    "log_seconds_since_previous",
+    "country_new",
+    "country_prior_frequency",
+    "ip_new",
+    "ip_prior_frequency",
+    "device_new",
+    "device_prior_frequency",
+    "browser_new",
+    "browser_prior_frequency"
+  ],
+  "feature_manifest_sha256": "06a4bd5c5d38d1922499e1c005655d3394db8c579606c7e91f4eaa1afbe6d1c1",
+  "code_sha256": "91e15a65cefeba01af5a94000a367e8e71791f392161a14b45d79cc7feb2af2f",
+  "seed": 42,
+  "split": {
+    "method": "unique-time 60/20/20 with boundary embargo",
+    "first_boundary": 1580901770.279,
+    "second_boundary": 1580959627.945,
+    "embargo_seconds": 3600,
+    "excluded_rows": 5804,
+    "counts": {
+      "train": 149993,
+      "calibration": 45648,
+      "test": 48541
+    },
+    "ranges": {
+      "train": [
+        1580733810.772,
+        1580901769.07
+      ],
+      "calibration": [
+        1580905370.486,
+        1580959623.604
+      ],
+      "test": [
+        1580963232.574,
+        1581008385.341
+      ]
+    }
+  },
+  "reference_policy": "dataset label 0",
+  "reference_train_rows": 10000,
+  "reference_calibration_rows": 41638,
+  "tail_fraction": 0.01,
+  "comparison": "score > threshold",
+  "threshold_version": "calibration-higher-quantile-v1",
+  "environment": {
+    "python": "3.12.13",
+    "machine": "arm64",
+    "system": "Darwin",
+    "thread_limit": 2,
+    "packages": {
+      "numpy": "2.2.6",
+      "scipy": "1.15.3",
+      "scikit-learn": "1.7.2",
+      "joblib": "1.5.2",
+      "threadpoolctl": "3.6.0",
+      "pyarrow": "21.0.0"
+    }
+  },
+  "audit": {
+    "raw_rows_examined": 250000,
+    "max_rows": 250000,
+    "sampling": "first CSV rows; prefix only, not representative full-year sample",
+    "prefix_truncated": true,
+    "cutoff_group_rows_excluded": 1,
+    "rejected_rows": {
+      "missing_required_value": 13
+    },
+    "observation_count": 249986,
+    "label_counts": {
+      "0": 226558,
+      "-1": 23424,
+      "1": 4
+    },
+    "label_policy": "ATO=1; attack-IP without ATO=-1 unknown; remaining=0 candidate negative",
+    "time_basis": "source ISO time, naive treated as UTC only for numeric ordering; timezone unverified",
+    "history": "all earlier accepted rows; equal timestamps excluded; no outcome/label filtering",
+    "history_limit": "starts empty at prefix start; prior attacks may contaminate context history",
+    "excluded_features": [
+      "Login Successful",
+      "Is Attack IP",
+      "Is Account Takeover",
+      "RTT",
+      "raw identifiers"
+    ],
+    "deployment_limit": "synthetic research only; no production IDS use",
+    "identical_rows": "retained without stable event identity; same timestamp stays within one split",
+    "archive_csv_bytes": 9052907531,
+    "archive_members": 12
+  },
+  "models": {
+    "robust_distance": {
+      "status": "EVALUATED",
+      "fit_rows": 10000,
+      "threshold": 3940.4998096205095,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "anomaly ranking; not attack probability",
+      "calibration": {
+        "rows": 41638,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 41638,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 41638
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "test": {
+        "rows": 48541,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 43928,
+        "unknown_label_rows": 4613,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 43927
+        },
+        "precision": null,
+        "recall": 0.0,
+        "fpr": 0.0
+      },
+      "seen_entity_test": {
+        "rows": 21224,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 18831,
+        "unknown_label_rows": 2393,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 18831
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "unseen_entity_test": {
+        "rows": 27317,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 25097,
+        "unknown_label_rows": 2220,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 25096
+        },
+        "precision": null,
+        "recall": 0.0,
+        "fpr": 0.0
+      },
+      "seconds": {
+        "fit": 0.004218792004394345,
+        "calibration": 0.0020378749977680854,
+        "test_inference": 0.0026716669963207096
+      },
+      "test_ms_per_row": 5.503938930637419e-05,
+      "artifact": {
+        "file": "robust_distance.joblib",
+        "sha256": "f67e23973de1c8d94a9e828eb6d729a9488073ec0482ad57a6f45f691787e2b4",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    },
+    "isolation_forest": {
+      "status": "EVALUATED",
+      "fit_rows": 10000,
+      "threshold": 0.6903749248414701,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "anomaly ranking; not attack probability",
+      "calibration": {
+        "rows": 41638,
+        "flagged": 415,
+        "flag_rate": 0.009966857197752053,
+        "labeled_rows": 41638,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 415,
+          "fn": 0,
+          "tn": 41223
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.009966857197752053
+      },
+      "test": {
+        "rows": 48541,
+        "flagged": 463,
+        "flag_rate": 0.009538328423394657,
+        "labeled_rows": 43928,
+        "unknown_label_rows": 4613,
+        "confusion": {
+          "tp": 1,
+          "fp": 452,
+          "fn": 0,
+          "tn": 43475
+        },
+        "precision": 0.002207505518763797,
+        "recall": 1.0,
+        "fpr": 0.010289798984679127
+      },
+      "seen_entity_test": {
+        "rows": 21224,
+        "flagged": 316,
+        "flag_rate": 0.014888805126272145,
+        "labeled_rows": 18831,
+        "unknown_label_rows": 2393,
+        "confusion": {
+          "tp": 0,
+          "fp": 309,
+          "fn": 0,
+          "tn": 18522
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.01640911263342361
+      },
+      "unseen_entity_test": {
+        "rows": 27317,
+        "flagged": 147,
+        "flag_rate": 0.0053812644141011095,
+        "labeled_rows": 25097,
+        "unknown_label_rows": 2220,
+        "confusion": {
+          "tp": 1,
+          "fp": 143,
+          "fn": 0,
+          "tn": 24953
+        },
+        "precision": 0.006944444444444444,
+        "recall": 1.0,
+        "fpr": 0.0056981192221868026
+      },
+      "seconds": {
+        "fit": 0.13968737499817507,
+        "calibration": 0.5447337500008871,
+        "test_inference": 0.6720301249952172
+      },
+      "test_ms_per_row": 0.013844587565052578,
+      "artifact": {
+        "file": "isolation_forest.joblib",
+        "sha256": "198839502fe80aad10254385899d57408196d46030ac0cc72e59e2f92adde173",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    },
+    "lof": {
+      "status": "EVALUATED",
+      "fit_rows": 10000,
+      "threshold": 6.755468185569121,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "anomaly ranking; not attack probability",
+      "calibration": {
+        "rows": 41638,
+        "flagged": 416,
+        "flag_rate": 0.009990873721120131,
+        "labeled_rows": 41638,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 416,
+          "fn": 0,
+          "tn": 41222
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.009990873721120131
+      },
+      "test": {
+        "rows": 48541,
+        "flagged": 511,
+        "flag_rate": 0.010527183205949609,
+        "labeled_rows": 43928,
+        "unknown_label_rows": 4613,
+        "confusion": {
+          "tp": 0,
+          "fp": 480,
+          "fn": 1,
+          "tn": 43447
+        },
+        "precision": 0.0,
+        "recall": 0.0,
+        "fpr": 0.010927220160721196
+      },
+      "seen_entity_test": {
+        "rows": 21224,
+        "flagged": 271,
+        "flag_rate": 0.012768563889935922,
+        "labeled_rows": 18831,
+        "unknown_label_rows": 2393,
+        "confusion": {
+          "tp": 0,
+          "fp": 264,
+          "fn": 0,
+          "tn": 18567
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.014019436036323085
+      },
+      "unseen_entity_test": {
+        "rows": 27317,
+        "flagged": 240,
+        "flag_rate": 0.008785737818940587,
+        "labeled_rows": 25097,
+        "unknown_label_rows": 2220,
+        "confusion": {
+          "tp": 0,
+          "fp": 216,
+          "fn": 1,
+          "tn": 24880
+        },
+        "precision": 0.0,
+        "recall": 0.0,
+        "fpr": 0.008606949314631815
+      },
+      "seconds": {
+        "fit": 0.12942995799676282,
+        "calibration": 0.555465749996074,
+        "test_inference": 0.6667020419990877
+      },
+      "test_ms_per_row": 0.013734822974373987,
+      "artifact": {
+        "file": "lof.joblib",
+        "sha256": "0a66f364b01473f1c77347f12481d057fe56591765032553c5785223c0530e7e",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    },
+    "hist_gradient_boosting": {
+      "status": "EVALUATED",
+      "fit_rows": 5003,
+      "threshold": 0.7006671840787317,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "uncalibrated class score",
+      "calibration": {
+        "rows": 41638,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 41638,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 41638
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "test": {
+        "rows": 48541,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 43928,
+        "unknown_label_rows": 4613,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 43927
+        },
+        "precision": null,
+        "recall": 0.0,
+        "fpr": 0.0
+      },
+      "seen_entity_test": {
+        "rows": 21224,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 18831,
+        "unknown_label_rows": 2393,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 18831
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "unseen_entity_test": {
+        "rows": 27317,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 25097,
+        "unknown_label_rows": 2220,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "tn": 25096
+        },
+        "precision": null,
+        "recall": 0.0,
+        "fpr": 0.0
+      },
+      "seconds": {
+        "fit": 0.04548712499672547,
+        "calibration": 0.04861508300382411,
+        "test_inference": 0.053713374996732455
+      },
+      "test_ms_per_row": 0.0011065568281809698,
+      "artifact": {
+        "file": "hist_gradient_boosting.joblib",
+        "sha256": "b4511345bbe40099fb08597ba9ed8995cfb609fc9c53c03e87fffcfb72811e2a",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    }
+  },
+  "deployment_status": "offline_experiment_only; no production policy authorization",
+  "split_sha256": "126e36d39074e92bbe9def98c238198cb37af6cc4a86b2ec0b8c0c024e71047d",
+  "training_evaluation_seconds": 3.2031535409987555,
+  "process_peak_rss_mib": 515.5,
+  "preparation_seconds": 5.795362208998995,
+  "end_to_end_seconds": 10.018700374996115
+}

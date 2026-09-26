@@ -1,0 +1,474 @@
+{
+  "status": "COMPLETED",
+  "created_at": "2026-09-26T14:41:14.808939+00:00",
+  "feature_dtype": "float64",
+  "observation_count": 16676,
+  "format": "zetty-offline-model/1",
+  "source": "rbd24-13787591-phishing-desktop",
+  "source_manifest": {
+    "bytes": 12559333,
+    "md5": "c55ef9d902973ab50b21399f5e50fabe",
+    "sha256": "f37097536bea46da33e65ec26709c772aaa31f10791ace8c3dded83ee23a34ed",
+    "url": "https://zenodo.org/records/13787591",
+    "license": "CC-BY-4.0"
+  },
+  "feature_version": "rbd-phishing-allowlist-v1",
+  "feature_names": [
+    "dns_interlog_time_q1",
+    "dns_interlog_time_q2",
+    "dns_interlog_time_q3",
+    "dns_interlog_time_q4",
+    "dns_interlog_time_q5",
+    "ssl_interlog_time_q1",
+    "ssl_interlog_time_q2",
+    "ssl_interlog_time_q3",
+    "ssl_interlog_time_q4",
+    "ssl_interlog_time_q5",
+    "http_interlog_time_q1",
+    "http_interlog_time_q2",
+    "http_interlog_time_q3",
+    "http_interlog_time_q4",
+    "http_interlog_time_q5",
+    "mean_interlog_time_dns_interlog_time",
+    "mean_interlog_time_ssl_interlog_time",
+    "mean_interlog_time_http_interlog_time",
+    "http_method_get_ratio",
+    "http_method_post_ratio",
+    "http_method_head_ratio",
+    "http_status_200_ratio",
+    "http_status_400_ratio"
+  ],
+  "feature_manifest_sha256": "344d98250af5824f20543178e19c08e5a8a4088ed57decd46707af6accebe4be",
+  "code_sha256": "91e15a65cefeba01af5a94000a367e8e71791f392161a14b45d79cc7feb2af2f",
+  "seed": 42,
+  "split": {
+    "method": "unique-time 60/20/20 with boundary embargo",
+    "first_boundary": 1666420200.0,
+    "second_boundary": 1666701600.0,
+    "embargo_seconds": 86400,
+    "excluded_rows": 1714,
+    "counts": {
+      "train": 10266,
+      "calibration": 2552,
+      "test": 2144
+    },
+    "ranges": {
+      "train": [
+        1665720000.0,
+        1666419600.0
+      ],
+      "calibration": [
+        1666537800.0,
+        1666701000.0
+      ],
+      "test": [
+        1666788000.0,
+        1666902600.0
+      ]
+    }
+  },
+  "reference_policy": "dataset label 0",
+  "reference_train_rows": 8300,
+  "reference_calibration_rows": 2095,
+  "tail_fraction": 0.01,
+  "comparison": "score > threshold",
+  "threshold_version": "calibration-higher-quantile-v1",
+  "environment": {
+    "python": "3.12.13",
+    "machine": "arm64",
+    "system": "Darwin",
+    "thread_limit": 2,
+    "packages": {
+      "numpy": "2.2.6",
+      "scipy": "1.15.3",
+      "scikit-learn": "1.7.2",
+      "joblib": "1.5.2",
+      "threadpoolctl": "3.6.0",
+      "pyarrow": "21.0.0"
+    }
+  },
+  "audit": {
+    "raw_rows": 16936,
+    "deduplicated_windows": 0,
+    "quarantined_conflicting_groups": 130,
+    "quarantined_rows": 260,
+    "raw_label_counts": {
+      "0": 13864,
+      "1": 3072
+    },
+    "selected_columns": [
+      "dns_interlog_time_q1",
+      "dns_interlog_time_q2",
+      "dns_interlog_time_q3",
+      "dns_interlog_time_q4",
+      "dns_interlog_time_q5",
+      "ssl_interlog_time_q1",
+      "ssl_interlog_time_q2",
+      "ssl_interlog_time_q3",
+      "ssl_interlog_time_q4",
+      "ssl_interlog_time_q5",
+      "http_interlog_time_q1",
+      "http_interlog_time_q2",
+      "http_interlog_time_q3",
+      "http_interlog_time_q4",
+      "http_interlog_time_q5",
+      "mean_interlog_time_dns_interlog_time",
+      "mean_interlog_time_ssl_interlog_time",
+      "mean_interlog_time_http_interlog_time",
+      "http_method_get_ratio",
+      "http_method_post_ratio",
+      "http_method_head_ratio",
+      "http_status_200_ratio",
+      "http_status_400_ratio"
+    ],
+    "excluded_feature_groups": [
+      "user_id",
+      "entity",
+      "label",
+      "timestamp",
+      "all SMTP",
+      "compromised indicators",
+      "SSL alerts/versions"
+    ],
+    "time_basis": "source-naive timestamp ordered as published; timezone unverified",
+    "window_width": "not established from metadata; 24h split embargo is conservative, not proof",
+    "label_policy": "phishing task only; label 0 training, -1 excluded",
+    "deployment_limit": "offline benchmark only; feature units/window semantics need further audit"
+  },
+  "models": {
+    "robust_distance": {
+      "status": "EVALUATED",
+      "fit_rows": 8300,
+      "threshold": 2000000.0,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "anomaly ranking; not attack probability",
+      "calibration": {
+        "rows": 2095,
+        "flagged": 16,
+        "flag_rate": 0.0076372315035799524,
+        "labeled_rows": 2095,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 16,
+          "fn": 0,
+          "tn": 2079
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.0076372315035799524
+      },
+      "test": {
+        "rows": 2144,
+        "flagged": 96,
+        "flag_rate": 0.04477611940298507,
+        "labeled_rows": 2144,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 4,
+          "fp": 92,
+          "fn": 413,
+          "tn": 1635
+        },
+        "precision": 0.041666666666666664,
+        "recall": 0.009592326139088728,
+        "fpr": 0.05327156919513607
+      },
+      "seen_entity_test": {
+        "rows": 2128,
+        "flagged": 96,
+        "flag_rate": 0.045112781954887216,
+        "labeled_rows": 2128,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 4,
+          "fp": 92,
+          "fn": 413,
+          "tn": 1619
+        },
+        "precision": 0.041666666666666664,
+        "recall": 0.009592326139088728,
+        "fpr": 0.05376972530683811
+      },
+      "unseen_entity_test": {
+        "rows": 16,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 16,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 16
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "seconds": {
+        "fit": 0.0036104590035392903,
+        "calibration": 0.00019175000488758087,
+        "test_inference": 0.00013462500646710396
+      },
+      "test_ms_per_row": 6.279151421040297e-05,
+      "artifact": {
+        "file": "robust_distance.joblib",
+        "sha256": "e074bf04e6b001f6e2c50fc622520953058e2f3a091ba0e93234466836729a72",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    },
+    "isolation_forest": {
+      "status": "EVALUATED",
+      "fit_rows": 8300,
+      "threshold": 0.5184694495549727,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "anomaly ranking; not attack probability",
+      "calibration": {
+        "rows": 2095,
+        "flagged": 20,
+        "flag_rate": 0.00954653937947494,
+        "labeled_rows": 2095,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 20,
+          "fn": 0,
+          "tn": 2075
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.00954653937947494
+      },
+      "test": {
+        "rows": 2144,
+        "flagged": 45,
+        "flag_rate": 0.020988805970149255,
+        "labeled_rows": 2144,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 45,
+          "fn": 417,
+          "tn": 1682
+        },
+        "precision": 0.0,
+        "recall": 0.0,
+        "fpr": 0.02605674580196873
+      },
+      "seen_entity_test": {
+        "rows": 2128,
+        "flagged": 45,
+        "flag_rate": 0.021146616541353382,
+        "labeled_rows": 2128,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 45,
+          "fn": 417,
+          "tn": 1666
+        },
+        "precision": 0.0,
+        "recall": 0.0,
+        "fpr": 0.026300409117475162
+      },
+      "unseen_entity_test": {
+        "rows": 16,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 16,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 16
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "seconds": {
+        "fit": 0.1398991659953026,
+        "calibration": 0.039836875002947636,
+        "test_inference": 0.04776108300575288
+      },
+      "test_ms_per_row": 0.022276624536265336,
+      "artifact": {
+        "file": "isolation_forest.joblib",
+        "sha256": "fba8904f37e2db81014076aa10444ba293e187677a54a32874b5970bfc117bfa",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    },
+    "lof": {
+      "status": "EVALUATED",
+      "fit_rows": 8300,
+      "threshold": 2.449282051190629,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "anomaly ranking; not attack probability",
+      "calibration": {
+        "rows": 2095,
+        "flagged": 20,
+        "flag_rate": 0.00954653937947494,
+        "labeled_rows": 2095,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 20,
+          "fn": 0,
+          "tn": 2075
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.00954653937947494
+      },
+      "test": {
+        "rows": 2144,
+        "flagged": 57,
+        "flag_rate": 0.02658582089552239,
+        "labeled_rows": 2144,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 11,
+          "fp": 46,
+          "fn": 406,
+          "tn": 1681
+        },
+        "precision": 0.19298245614035087,
+        "recall": 0.026378896882494004,
+        "fpr": 0.026635784597568036
+      },
+      "seen_entity_test": {
+        "rows": 2128,
+        "flagged": 57,
+        "flag_rate": 0.026785714285714284,
+        "labeled_rows": 2128,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 11,
+          "fp": 46,
+          "fn": 406,
+          "tn": 1665
+        },
+        "precision": 0.19298245614035087,
+        "recall": 0.026378896882494004,
+        "fpr": 0.026884862653419054
+      },
+      "unseen_entity_test": {
+        "rows": 16,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 16,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 16
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "seconds": {
+        "fit": 0.10270437500003027,
+        "calibration": 0.030848249996779487,
+        "test_inference": 0.03102141599811148
+      },
+      "test_ms_per_row": 0.014468944028969906,
+      "artifact": {
+        "file": "lof.joblib",
+        "sha256": "3fd8cc5c2fe9ecc9c244b5060e12a9c581224a6260a2691721eed05e3521477d",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    },
+    "hist_gradient_boosting": {
+      "status": "EVALUATED",
+      "fit_rows": 6966,
+      "threshold": 0.8456625678152844,
+      "score_direction": "higher_is_more_anomalous",
+      "score_semantics": "uncalibrated class score",
+      "calibration": {
+        "rows": 2095,
+        "flagged": 19,
+        "flag_rate": 0.009069212410501194,
+        "labeled_rows": 2095,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 19,
+          "fn": 0,
+          "tn": 2076
+        },
+        "precision": 0.0,
+        "recall": null,
+        "fpr": 0.009069212410501194
+      },
+      "test": {
+        "rows": 2144,
+        "flagged": 78,
+        "flag_rate": 0.036380597014925374,
+        "labeled_rows": 2144,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 65,
+          "fp": 13,
+          "fn": 352,
+          "tn": 1714
+        },
+        "precision": 0.8333333333333334,
+        "recall": 0.15587529976019185,
+        "fpr": 0.007527504342790967
+      },
+      "seen_entity_test": {
+        "rows": 2128,
+        "flagged": 78,
+        "flag_rate": 0.03665413533834586,
+        "labeled_rows": 2128,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 65,
+          "fp": 13,
+          "fn": 352,
+          "tn": 1698
+        },
+        "precision": 0.8333333333333334,
+        "recall": 0.15587529976019185,
+        "fpr": 0.007597895967270602
+      },
+      "unseen_entity_test": {
+        "rows": 16,
+        "flagged": 0,
+        "flag_rate": 0.0,
+        "labeled_rows": 16,
+        "unknown_label_rows": 0,
+        "confusion": {
+          "tp": 0,
+          "fp": 0,
+          "fn": 0,
+          "tn": 16
+        },
+        "precision": null,
+        "recall": null,
+        "fpr": 0.0
+      },
+      "seconds": {
+        "fit": 0.11551462500210619,
+        "calibration": 0.003449541996815242,
+        "test_inference": 0.0036165000055916607
+      },
+      "test_ms_per_row": 0.001686800375742379,
+      "artifact": {
+        "file": "hist_gradient_boosting.joblib",
+        "sha256": "00f40f2d5234dc334747249bc4beda8982819b5846e6f905ee211bef34a82835",
+        "trust": "load only this locally generated artifact in a trusted directory"
+      }
+    }
+  },
+  "deployment_status": "offline_experiment_only; no production policy authorization",
+  "split_sha256": "6ab2a2d47c555cb6595466a4a568597fa7e76f7ba62491201bef44cbbd8894b5",
+  "training_evaluation_seconds": 0.6774385409953538,
+  "process_peak_rss_mib": 179.328125,
+  "preparation_seconds": 0.14748362499813084,
+  "end_to_end_seconds": 1.6993854999964242
+}
