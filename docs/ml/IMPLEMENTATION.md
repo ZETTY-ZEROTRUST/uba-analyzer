@@ -1,6 +1,6 @@
 # 신규 UBA 구현 안내 — 데이터·모델·대응 분리
 
-> 2026-09-26 · 채택된 작업 방향, 구현 미완료.
+> 2026-09-26 · offline 학습 CLI 구현 진행, 서비스 실행 구조는 미완료. 실제 결과는 [단계별 기록](README.md)을 따른다.
 > [루트 지침](../../../AGENTS.md) → [인수인계](../../../docs/HANDOFF.md) → [전체 합의](../../../IMPLEMENTATION_AGREEMENT.md) → 이 문서 순서로 읽는다.
 
 ## 1. 범위와 현재 자산
@@ -94,7 +94,7 @@ API decision과 edge completion을 request_id로 join해 한 요청을 중복 �
 
 ## 7. 구현 경로와 작업 소유
 
-다음은 M-02에서 만들 제안 경로이며 현재 구현 파일이 아니다. source별 adapter와 core를 분리하는 목적이며 불필요한 서버를 추가하지 않는다.
+현재 `datasets/`, `training/`, `__main__.py`와 `tests/ml/`에 offline 공개 데이터 경로를 구현했다. 아래 전체 구조 중 detection/policy/adapters 및 서비스 consumer는 후속 제안 경로다. source별 adapter와 core를 분리하는 목적이며 불필요한 서버를 추가하지 않는다.
 
 ```text
 src/zetty_uba/
@@ -118,7 +118,7 @@ tests/          계약·단위·fixture·선택 Compose 통합
 
 공통 schema·index mapping·Compose 진입점은 각 owner와 조율한다. backend의 JWT·발급대장·refresh·집행 코드는 인증 트랙 소유다. 같은 mapping을 동시에 수정하지 않는다.
 
-정확한 CLI 이름·입출력·exit code는 M-02에서 고정한다. 현재 pipeline.py --dry-run은 ES 조회를 포함하는 v1 명령이므로 신규 offline smoke로 쓰지 않는다. 새 모듈 import만으로 env 파일·외부 연결·모델 다운로드가 발생하지 않게 한다.
+현재 offline CLI·입출력·exit code는 [실행 안내](04-model-training/RUNBOOK.md)에 기록했다. 현재 pipeline.py --dry-run은 ES 조회를 포함하는 v1 명령이므로 신규 offline smoke로 쓰지 않는다. 새 모듈 import만으로 env 파일·외부 연결·모델 다운로드가 발생하지 않게 한다.
 
 ## 8. 재처리·검증·인수인계
 
@@ -128,4 +128,4 @@ Outbox 원본·receipt를 복구 근거로 보존하며 Redis AOF만을 원본�
 
 v1의 baseline 재계산, processing-day index/auto-ID, bulk 부분 실패 무시, profile 반복 누적은 재발 방지 사례다. 구 코드를 먼저 고쳐 새 모델을 그 점수 체계에 붙이는 작업으로 바꾸지 않는다.
 
-다음 작업자는 repo status·사용자 실험을 확인하고 M-01 manifest·작은 parser fixture부터 시작한다. Git은 루트 지침과 사용자 지시를 따른다. 신규 평가 보고서는 source·모델·환경·표본·분모·실행 결과를 포함한다.
+다음 작업자는 repo status·사용자 실험과 [실행 결과](README.md)를 확인하고 미완료 데이터 조건 및 C-02 서비스 선행 조건부터 이어간다. Git은 루트 지침과 사용자 지시를 따른다. 신규 평가 보고서는 source·모델·환경·표본·분모·실행 결과를 포함한다.

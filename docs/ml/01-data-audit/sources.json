@@ -1,0 +1,159 @@
+[
+  {
+    "id": 18895701,
+    "title": "Online Shop Server Logs for Bot Traffic and Web Usage Analysis (Dec 2025) Anonymized",
+    "doi": "10.5281/zenodo.18895701",
+    "creators": [
+      {
+        "name": "Chodak, Grzegorz",
+        "affiliation": "Wrocław University of Science and Technology",
+        "orcid": "0000-0002-9604-482X"
+      }
+    ],
+    "publication_date": "2026-03-06",
+    "license": {
+      "id": "cc-by-4.0"
+    },
+    "url": "https://zenodo.org/records/18895701",
+    "files": [
+      {
+        "name": "domain.access.log-20251208.anonymized.txt",
+        "size": 28630570,
+        "checksum": "md5:725822e13e09281b498e7cd5d082a039"
+      }
+    ]
+  },
+  {
+    "id": 13787591,
+    "title": "RBD24 - Risk Activities Dataset 2024",
+    "doi": "10.5281/zenodo.13787591",
+    "creators": [
+      {
+        "name": "Albert, Calvo",
+        "affiliation": "i2CAT"
+      },
+      {
+        "name": "Santiago, Escuder",
+        "affiliation": "i2CAT"
+      },
+      {
+        "name": "Nil, Ortiz",
+        "affiliation": "i2CAT"
+      },
+      {
+        "name": "Josep, Escrig",
+        "affiliation": "i2CAT"
+      },
+      {
+        "name": "Maxime, Compastié",
+        "affiliation": "i2CAT"
+      }
+    ],
+    "publication_date": "2024-09-18",
+    "license": {
+      "id": "cc-by-4.0"
+    },
+    "url": "https://zenodo.org/records/13787591",
+    "files": [
+      {
+        "name": "Phishing_desktop.parquet",
+        "size": 12559333,
+        "checksum": "md5:c55ef9d902973ab50b21399f5e50fabe"
+      },
+      {
+        "name": "Phishing_smartphone.parquet",
+        "size": 31827461,
+        "checksum": "md5:a20c8f65d4752d2efa45398dbb4e3a65"
+      },
+      {
+        "name": "Crypto_smartphone.parquet",
+        "size": 134127624,
+        "checksum": "md5:f60e4497ddaaa4f174cca10c6094945a"
+      },
+      {
+        "name": "Crypto_desktop.parquet",
+        "size": 120310344,
+        "checksum": "md5:19b9d5d13854cd1abf9d017f449daeaf"
+      },
+      {
+        "name": "OutFlash_desktop.parquet",
+        "size": 127323324,
+        "checksum": "md5:4845366860c8acd81e5470598a1bcb74"
+      },
+      {
+        "name": "OutFlash_smartphone.parquet",
+        "size": 138333047,
+        "checksum": "md5:3f2b78c779d4d3c82cdf01442c01dffe"
+      },
+      {
+        "name": "NonEnc_smartphone.parquet",
+        "size": 164081363,
+        "checksum": "md5:14b7fcd7777e05f8648e0348e820db3d"
+      },
+      {
+        "name": "NonEnc_desktop.parquet",
+        "size": 163674363,
+        "checksum": "md5:e73163185bc0b868538172c12862efa4"
+      },
+      {
+        "name": "P2P_desktop.parquet",
+        "size": 151226809,
+        "checksum": "md5:4ba610a28b833dfbecca0c237198d6ec"
+      },
+      {
+        "name": "OutTLS_desktop.parquet",
+        "size": 121135444,
+        "checksum": "md5:c6b7e134653818063d4bfd372bcaca40"
+      },
+      {
+        "name": "P2P_smartphone.parquet",
+        "size": 153914493,
+        "checksum": "md5:fb2d3e17123bb0c5b3610f6d706ead61"
+      },
+      {
+        "name": "OutTLS_smartphone.parquet",
+        "size": 135336045,
+        "checksum": "md5:c190dd676207ee682b6cbd8936550237"
+      }
+    ]
+  },
+  {
+    "id": 6782156,
+    "title": "Login Data Set for Risk-Based Authentication",
+    "doi": "10.5281/zenodo.6782156",
+    "creators": [
+      {
+        "name": "Wiefling, Stephan",
+        "affiliation": "H-BRS University of Applied Sciences",
+        "orcid": "0000-0001-7917-6065"
+      },
+      {
+        "name": "Jørgensen, Paul René",
+        "affiliation": "Telenor Digital",
+        "orcid": "0000-0003-3806-714X"
+      },
+      {
+        "name": "Thunem, Sigurd",
+        "affiliation": "Telenor Digital",
+        "orcid": "0000-0001-7569-8501"
+      },
+      {
+        "name": "Lo Iacono, Luigi",
+        "affiliation": "H-BRS University of Applied Sciences",
+        "orcid": "0000-0002-7863-0622"
+      }
+    ],
+    "publication_date": "2022-06-30",
+    "license": {
+      "id": "cc-by-4.0"
+    },
+    "url": "https://zenodo.org/records/6782156",
+    "files": [
+      {
+        "name": "rba-dataset.zip",
+        "size": 1093700330,
+        "checksum": "md5:cc1b1078b3929650e6c08678caffcc57"
+      }
+    ]
+  }
+]
