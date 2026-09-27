@@ -1,3 +1,5 @@
+> 최신 기본 실행은 [무료 Colab GPU 실행 안내](../11-colab-gpu/RUNBOOK.md)를 따른다. 아래 과거 CPU 연구 재개 설명과 새 GPU 연구를 구분한다.
+
 # 현재 학습 결과 확인부터 Colab 재개까지
 
 ## 현재 어디까지 완료됐나
@@ -20,7 +22,7 @@ JSON만 읽는 명령이며 모델 fit을 실행하지 않는다. 선택 모델�
 ## Colab 재개 순서
 
 1. [Colab 노트북 열기](https://colab.research.google.com/github/jjyj0203/uba-analyzer/blob/feature/public-data-training-star/notebooks/zetty_rba_colab.ipynb). Google 계정으로 로그인하고 Drive에 사본을 저장한다.
-2. **Google 호스팅 runtime**을 연결한다. `로컬 런타임 연결`은 사용하지 않는다. CPU 모델이므로 GPU 할당은 필수가 아니다. Python 3.12/3.13 여부를 첫 셀이 검사한다. RAM이 부족한 runtime이면 메모리가 더 큰 runtime을 선택하거나 새 runtime에서 진행해야 한다. 무료/유료 자원 가용성을 보장하지 않는다.
+2. **Google 호스팅 runtime**을 연결한다. `로컬 런타임 연결`은 사용하지 않는다. 기존 cpu-full profile에만 GPU가 불필요하다. 현재 노트북 기본값 colab-gpu-v1은 GPU가 필요하다. Python 3.12/3.13 여부를 첫 셀이 검사한다. RAM이 부족한 runtime이면 메모리가 더 큰 runtime을 선택하거나 새 runtime에서 진행해야 한다. 무료/유료 자원 가용성을 보장하지 않는다.
 3. Mac의 `/Users/jjyj2302/zetty/ml-runs/20260927-full`에서 아래 두 디렉터리를 Drive `내 드라이브/zetty/20260927-full`에 같은 구조로 업로드한다. Mac에서는 업로드만 하며 학습하지 않는다.
 
 ```text
@@ -39,7 +41,7 @@ MyDrive/zetty/20260927-full/
     progress.json
 ```
 
-4. 노트북 1~4번을 실행한다. Python/패키지 설치, Drive 연결, 업로드 경로와 저장 모델 목록을 확인한다. 기본값 fresh를 `MODE = 'resume'`으로 변경한다. 기존 Mac checkpoint는 Python 3.12에서만 재개한다. 배열만 약 2.66GB이며 모델/분할 파일이 추가된다. SQLite 이력 cache와 원본 ZIP은 resume에 필요하지 않다.
+4. 노트북 1~4번을 실행한다. Python/패키지 설치, Drive 연결, 업로드 경로와 저장 모델 목록을 확인한다. 기존 CPU 연구를 재개할 때는 `PROFILE = 'cpu-full'`, `MODE = 'resume'`으로 변경한다. 기존 Mac checkpoint는 Python 3.12에서만 재개한다. 배열만 약 2.66GB이며 모델/분할 파일이 추가된다. SQLite 이력 cache와 원본 ZIP은 resume에 필요하지 않다.
 5. 5번 셀에서 실행한다. 저장된 11개 모델은 재사용하고 중단된 RF는 처음부터 fit한다. 그 뒤 validation으로 선택을 고정하고 12개 후보의 전체 test를 평가한다. exact LOF 두 후보는 원래 계획의 계산 한도로 생략한다. RAM/CPU가 달라 Mac 기준 남은 시간을 Colab에 그대로 적용하지 않는다.
 6. 6번 셀에서 `COMPLETED`, selection, 모든 후보 지표를 확인한다. **RBA final test는 이때 처음 생성된다.** VM이 끊겼으면 `colab-runs/<실행ID>` 백업 디렉터리를 CHECKPOINT로 바꿔 새 실행에서 이어간다. 부분 fit은 다시 수행될 수 있다.
 7. 7번 셀에서 결과 ZIP을 내려받는다. Mac의 새 run 디렉터리에 보관한다. RBA 결과는 RBA 피처 replay에서 사용해야 하며, [현재 HTTP 파일 pipeline](../10-file-pipeline/RUNBOOK.md)에 넣으면 feature/source 불일치로 거부된다. 공개 RBA 피처 replay는 `zetty_uba.lab run-file`에 해당 모델과 manifest hash를 지정한다.

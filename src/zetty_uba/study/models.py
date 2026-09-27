@@ -67,8 +67,11 @@ class Fitted:
         return self.model.predict_proba(x)[:,1]
 
 
-def fit(spec,x,labels,reference,supervised,scaler,heartbeat=lambda **kw:None):
+def fit(spec,x,labels,reference,supervised,scaler,heartbeat=lambda **kw:None,workers=2):
     kind=spec['kind'];seed=spec['seed'];mapper=None
+    if kind == 'xgb':
+        from .gpu import fit as fit_gpu
+        return fit_gpu(spec,x,labels,supervised,workers=workers,heartbeat=heartbeat)
     indices=supervised if kind in ('hgb','rf') else reference
     if kind in ('hgb','rf') and len(np.unique(labels[indices]))!=2:
         return None,{'status':'SKIPPED','reason':'training_requires_both_task_classes'}
@@ -79,7 +82,7 @@ def fit(spec,x,labels,reference,supervised,scaler,heartbeat=lambda **kw:None):
     if kind=='distance':model=None
     elif kind=='if':
         model=IsolationForest(n_estimators=spec['trees'],max_samples=min(spec['samples'],len(indices)),
-                              random_state=seed,n_jobs=2,contamination='auto').fit(x[indices])
+                              random_state=seed,n_jobs=workers,contamination='auto').fit(x[indices])
     elif kind in ('sgd','kmeans'):
         if kind=='sgd':
             model=SGDOneClassSVM(nu=spec['nu'],random_state=seed,shuffle=True,average=True)
@@ -100,7 +103,7 @@ def fit(spec,x,labels,reference,supervised,scaler,heartbeat=lambda **kw:None):
                 if processed%BATCH==0 and processed%(BATCH*32)==0:
                     heartbeat(epoch=epoch+1,processed_rows=processed,eligible_rows=len(indices))
     elif kind=='lof':
-        model=LocalOutlierFactor(n_neighbors=min(spec['neighbors'],len(indices)-1),novelty=True,n_jobs=2)
+        model=LocalOutlierFactor(n_neighbors=min(spec['neighbors'],len(indices)-1),novelty=True,n_jobs=workers)
         model.fit(scaler.transform(x[indices]))
     else:
         truth=labels[indices];counts=np.bincount(truth,minlength=2)
@@ -111,7 +114,7 @@ def fit(spec,x,labels,reference,supervised,scaler,heartbeat=lambda **kw:None):
             model.fit(x[indices],truth,sample_weight=weights)
         else:
             model=RandomForestClassifier(n_estimators=spec['trees'],max_depth=spec['depth'],
-                min_samples_leaf=spec['leaf_min'],class_weight='balanced',n_jobs=2,random_state=seed)
+                min_samples_leaf=spec['leaf_min'],class_weight='balanced',n_jobs=workers,random_state=seed)
             model.fit(x[indices],truth)
     fitted=Fitted(kind,model,scaler,mapper)
     return fitted,{'status':'FITTED','fit_rows':len(indices),'fit_seconds':time.perf_counter()-started,

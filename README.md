@@ -1,3 +1,5 @@
+> Colab 학습 기본값은 [GPU 비교 profile](docs/ml/11-colab-gpu/RUNBOOK.md)입니다. 기존 CPU 연구와 HTTP 파일 추론은 보존합니다.
+
 > **현재 실행: Redis 없음.** [로그 파일→피처→탐지 실행 방법](docs/ml/10-file-pipeline/RUNBOOK.md). 정책·인증 집행은 이번 범위에서 제외합니다.
 
 > **2026-09-27 현재:** 로컬 학습은 발열로 중단. 최종 평가 179개·RBA validation 11개 보존. [현재 결과](docs/ml/07-full-data-study/RESULTS.md) · [추론 Docker 실행](docs/ml/08-lab-inference/RUNBOOK.md) · [Colab 재개와 모델 확인](docs/ml/09-colab/HOWTO.md).

@@ -66,6 +66,6 @@ class ColabCheckpoint(unittest.TestCase):
         notebook=json.loads((Path(__file__).resolve().parents[2]/'notebooks/zetty_rba_colab.ipynb').read_text())
         cells=[''.join(c['source']) for c in notebook['cells'] if c['cell_type']=='code']
         for source in cells:compile(source,'colab-cell','exec')
-        with patch.object(module.platform,'system',return_value='Linux'), patch.dict(module.os.environ,{'COLAB_RELEASE_TAG':'test'}), patch.object(module.sys,'version_info',(3,13,15)):
+        with patch.object(module.platform,'system',return_value='Linux'), patch.dict(module.os.environ,{'COLAB_RELEASE_TAG':'test'}), patch.object(module.sys,'version_info',(3,13,15)), patch.object(module.subprocess,'run'):
             exec(compile(cells[0],'runtime-check','exec'),{})
         self.assertTrue(any("MODE = 'fresh'" in c for c in cells))

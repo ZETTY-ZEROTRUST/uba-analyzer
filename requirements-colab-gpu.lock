@@ -1,0 +1,6 @@
+# Python 3.12/3.13; Linux Colab CUDA 12 runtime. No GPU dependencies in the CPU lab.
+-r requirements-ml.lock
+xgboost==3.0.5
+cupy-cuda12x==13.6.0
+fastrlock==0.8.3
+nvidia-nccl-cu12==2.27.7

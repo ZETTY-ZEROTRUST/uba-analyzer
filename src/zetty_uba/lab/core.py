@@ -76,6 +76,9 @@ class Detector:
         for package in ('numpy', 'scipy', 'scikit-learn', 'joblib'):
             if version(package) != manifest['environment']['packages'][package]:
                 raise ValueError('dependency_version_mismatch')
+        if result.get('specification', {}).get('kind') == 'xgb':
+            if version('xgboost') != manifest['environment']['packages']['xgboost']:
+                raise ValueError('dependency_version_mismatch')
         path = run / result['artifact']['file']
         if path.parent != run or path.is_symlink() or path.stat().st_size > 512 * 1024 * 1024:
             raise ValueError('invalid_artifact_path_or_size')

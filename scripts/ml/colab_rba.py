@@ -40,6 +40,23 @@ def sha(path):
     return h.hexdigest()
 
 
+def copy_prepared(source, destination):
+    """Only immutable finalized arrays, never SQLite history/chunks/raw data."""
+    raw = (source/'dataset.json').read_bytes()
+    meta = json.loads(raw)
+    if meta.get('status') != 'COMPLETED' or set(meta['files']) != {'x','times','entities','labels'}:
+        raise ValueError('prepared dataset must be complete with four arrays')
+    destination.mkdir(parents=True, exist_ok=True)
+    for name, info in meta['files'].items():
+        path = source/(name+'.bin')
+        if path.is_symlink() or path.stat().st_size != info['bytes'] or sha(path) != info['sha256']:
+            raise ValueError('prepared array checksum mismatch')
+        copy_atomic(path, destination/path.name)
+    temporary = destination/'dataset.json.copying'
+    temporary.write_bytes(raw)
+    temporary.replace(destination/'dataset.json')
+
+
 def validate_runtime(checkpoint_python=None):
     if platform.system() != 'Linux' or not os.environ.get('COLAB_RELEASE_TAG'):
         raise SystemExit('Google-hosted Colab runtime required; local training is disabled')
@@ -57,7 +74,8 @@ def validate_runtime(checkpoint_python=None):
 
 def main():
     p=argparse.ArgumentParser(description=__doc__)
-    p.add_argument('--mode',choices=['resume','fresh'],required=True)
+    p.add_argument('--mode',choices=['resume','fresh','prepared'],required=True)
+    p.add_argument('--profile',choices=['cpu-full','colab-gpu-v1'],default='cpu-full')
     p.add_argument('--checkpoint',type=Path)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--backup',type=Path,required=True)
@@ -68,14 +86,23 @@ def main():
             raise SystemExit('checkpoint required')
         checkpoint_manifest = json.loads((args.checkpoint/'runs/rba/study.json').read_text())
         validate_runtime(checkpoint_manifest['environment']['python'])
+        if checkpoint_manifest.get('profile','cpu-full') != args.profile:
+            raise SystemExit('checkpoint profile mismatch; use mode=prepared to start a new profile')
     if args.output.exists():raise SystemExit('use a new output directory; resume from a checkpoint copy')
     root=Path(__file__).resolve().parents[2]
-    output=args.output;output.mkdir(parents=True)
+    if args.mode == 'prepared' and args.checkpoint is None:
+        raise SystemExit('prepared mode requires checkpoint directory containing prepared/rba')
     env=dict(os.environ,OMP_NUM_THREADS='2',OPENBLAS_NUM_THREADS='2',MKL_NUM_THREADS='2',PYTHONDONTWRITEBYTECODE='1')
+    env['PYTHONPATH']=str(root/'src')
+    if args.profile == 'colab-gpu-v1':
+        # Before any multi-GB download/copy/preprocessing; tiny GPU-only smoke fit.
+        subprocess.run([sys.executable,'-m','zetty_uba.study.gpu'],cwd=root,env=env,check=True)
+    output=args.output;output.mkdir(parents=True)
+    cloud_started=time.perf_counter()
     if args.mode=='resume':
         if args.checkpoint is None:raise SystemExit('checkpoint required')
         prepared=output/'prepared'/'rba';run=output/'runs'/'rba'
-        shutil.copytree(args.checkpoint/'prepared'/'rba',prepared)
+        copy_prepared(args.checkpoint/'prepared'/'rba',prepared)
         shutil.copytree(args.checkpoint/'runs'/'rba',run,ignore=shutil.ignore_patterns('*.tmp','__pycache__'))
         manifest=json.loads((run/'study.json').read_text())
         if manifest['status'] not in ('STOPPED_BY_USER','FAILED','RUNNING'):
@@ -88,7 +115,7 @@ def main():
             h.update(str(path.relative_to(source)).encode()+b'\0'+path.read_bytes()+b'\0')
         if h.hexdigest()!=manifest['code_sha256']:raise SystemExit('snapshot checksum mismatch')
         from importlib.metadata import version
-        current={'python':platform.python_version(),'machine':platform.machine(),'thread_limit':2,
+        current={'python':platform.python_version(),'machine':platform.machine(),'thread_limit':manifest['environment'].get('thread_limit',2),
                  'packages':{key:version(key) for key in manifest['environment']['packages']}}
         if current['packages']!=manifest['environment']['packages']:raise SystemExit('dependency mismatch')
         # Integrity check before the trusted joblib artifacts can be loaded by runner.
@@ -102,6 +129,9 @@ def main():
         manifest['environment']=current;manifest['status']='RUNNING'
         (run/'study.json').write_text(json.dumps(manifest,indent=2)+'\n')
         env['PYTHONPATH']=str(source.parent)
+    elif args.mode == 'prepared':
+        prepared=output/'prepared'/'rba';run=output/'runs'/'rba'
+        copy_prepared(args.checkpoint/'prepared'/'rba',prepared)
     else:
         prepared=output/'prepared'/'rba';run=output/'runs'/'rba'
         env['PYTHONPATH']=str(root/'src')
@@ -110,6 +140,8 @@ def main():
         # prepare_rba verifies original size/MD5 and CSV EOF/CRC itself.
         subprocess.run([sys.executable,'-m','zetty_uba.study','prepare','--source','rba',
                         '--input',str(raw),'--output',str(prepared)],cwd=root,env=env,check=True)
+    preparation_seconds=time.perf_counter()-cloud_started
+    print(json.dumps({'stage':'prepared_ready','seconds':preparation_seconds,'profile':args.profile}),flush=True)
     finished=threading.Event();errors=[]
     def periodic():
         while not finished.wait(30):
@@ -119,13 +151,17 @@ def main():
     code=1
     try:
         # Prepared arrays are essential for resume; copy once, not every heartbeat.
-        backup(prepared,args.backup/'prepared'/'rba')
-        code=subprocess.call([sys.executable,'-m','zetty_uba.study','train','--prepared',str(prepared),
-                              '--output',str(run)],cwd=root,env=env)
+        copy_prepared(prepared,args.backup/'prepared'/'rba')
+        prepared_backup_seconds=time.perf_counter()-cloud_started-preparation_seconds
+        print(json.dumps({'stage':'prepared_backup_ready','seconds':prepared_backup_seconds}),flush=True)
+        command=[sys.executable,'-m','zetty_uba.study','train','--prepared',str(prepared),'--output',str(run)]
+        if args.profile != 'cpu-full':command+=['--profile',args.profile]
+        code=subprocess.call(command,cwd=root,env=env)
     finally:
         finished.set();thread.join();backup(run,args.backup/'runs'/'rba')
         (args.backup/'cloud-execution.json').write_text(json.dumps({'returncode':code,'mode':args.mode,
-            'platform':platform.platform(),'backup_errors':errors,'finished_epoch':time.time()},indent=2)+'\n')
+            'platform':platform.platform(),'profile':args.profile,'preparation_seconds':preparation_seconds,
+            'elapsed_seconds':time.perf_counter()-cloud_started,'backup_errors':errors,'finished_epoch':time.time()},indent=2)+'\n')
     raise SystemExit(code)
 
 

@@ -1,3 +1,5 @@
+> 최신 기본 실행은 [무료 Colab GPU 실행 안내](../11-colab-gpu/RUNBOOK.md)를 따른다. 아래 과거 CPU 연구 재개 설명과 새 GPU 연구를 구분한다.
+
 # Colab 이전 — 실행 전 STAR
 
 ## S — 상황
@@ -10,7 +12,7 @@ Mac에서 RBA Random Forest 학습 도중 사용자가 CPU 94°C를 보고해 �
 
 ## A — 두 실행 경로
 
-[노트북](../../../notebooks/zetty_rba_colab.ipynb)을 Colab에서 연다. 셀의 경로와 mode를 확인한 후 실행한다. Python 3.12/3.13·동일 고정 의존성을 지원한다. resume은 checkpoint와 같은 Python minor가 필요하다. 현재 모델은 CPU 구현이므로 GPU를 선택해도 자동 가속되지 않는다.
+[노트북](../../../notebooks/zetty_rba_colab.ipynb)을 Colab에서 연다. 셀의 경로와 mode를 확인한 후 실행한다. Python 3.12/3.13·동일 고정 의존성을 지원한다. resume은 checkpoint와 같은 Python minor가 필요하다. 기존 cpu-full은 CPU 구현이다. 새 colab-gpu-v1은 CUDA를 사용한다.
 
 - `resume`: 준비한 checkpoint 디렉터리를 Drive에 업로드하고 경로를 지정한다. prepared/rba, runs/rba 및 source_snapshot을 읽는다. 완료된 11개 모델을 재사용하고 중단된 RF fit부터 다시 실행한 뒤 모델 선택·전체 최종 평가를 진행한다. 미완료 RF의 트리 단위 재개는 지원하지 않는다. 원본 snapshot을 별도 PYTHONPATH로 사용해 code/plan hash를 유지한다.
 - `fresh`: 대용량 checkpoint 업로드를 피하려면 공식 RBA ZIP을 Colab에서 직접 받아 전체 전처리와 RBA 연구를 새 버전으로 실행한다. 기존 Mac의 11개 RBA 모델도 다시 학습하므로 resume와 구분한다. 다른 완료 source 13개는 재학습하지 않는다.

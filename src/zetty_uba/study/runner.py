@@ -61,13 +61,13 @@ def evaluate(scores,threshold,labels):
     return result
 
 
-def score_all(model,x,indices,heartbeat=lambda **kw:None):
+def score_all(model,x,indices,heartbeat=lambda **kw:None,batch_size=8192):
     started=time.perf_counter();scores=np.empty(len(indices),dtype=np.float64)
-    for offset in range(0,len(indices),8192):
-        values=np.asarray(model.score(x[indices[offset:offset+8192]]))
+    for offset in range(0,len(indices),batch_size):
+        values=np.asarray(model.score(x[indices[offset:offset+batch_size]]))
         if not np.isfinite(values).all():raise ValueError('non_finite_model_score')
         scores[offset:offset+len(values)]=values
-        if offset and offset%(8192*128)==0:heartbeat(scored_rows=offset,total_rows=len(indices))
+        if offset and offset%(batch_size*16)==0:heartbeat(scored_rows=offset,total_rows=len(indices))
     return scores,time.perf_counter()-started
 
 
@@ -89,7 +89,15 @@ def select_model(results):
             'frozen_before_test':True}
 
 
-def run(directory,output,*,specs=None,train_fraction=.5):
+def run(directory,output,*,specs=None,train_fraction=.5,profile='cpu-full'):
+    hardware=None;workers=2;score_batch=8192
+    packages=('numpy','scipy','scikit-learn','joblib','threadpoolctl','pyarrow')
+    if profile == 'colab-gpu-v1':
+        from .gpu import preflight, candidates as gpu_candidates, batch_rows
+        hardware=preflight();workers=hardware['cpu_workers']
+        if specs is not None:raise ValueError('GPU profile uses fixed preregistered candidates')
+        specs=gpu_candidates();packages+=('xgboost','cupy-cuda12x','fastrlock','nvidia-nccl-cu12')
+    elif profile != 'cpu-full':raise ValueError('unknown_study_profile')
     directory,output=Path(directory),Path(output)
     arrays,meta=open_data(directory)
     for name,info in meta['files'].items():
@@ -99,6 +107,9 @@ def run(directory,output,*,specs=None,train_fraction=.5):
     if output.resolve().is_relative_to(package):raise ValueError('output_inside_source')
     identity={'dataset_sha256':digest_file(directory/'dataset.json'),'code_sha256':code_hash(),
               'candidates':specs,'format':'zetty-full-study/2','threshold_tail':.01,'train_fraction':train_fraction}
+    if hardware is not None:
+        identity['profile']=profile
+        score_batch=batch_rows(hardware['free_vram_bytes'],len(meta['names']))
     plan_hash=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()
     if output.exists():
         existing=json.loads((output/'study.json').read_text())
@@ -111,8 +122,13 @@ def run(directory,output,*,specs=None,train_fraction=.5):
             target=output/'source_snapshot'/source.relative_to(package)
             target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source,target)
         manifest={'status':'RUNNING','plan_sha256':plan_hash,**identity,'dataset':meta,'models':{},
-                  'environment':{'python':platform.python_version(),'machine':platform.machine(),'thread_limit':2,
-                      'packages':{name:version(name) for name in ('numpy','scipy','scikit-learn','joblib','threadpoolctl','pyarrow')}}}
+                  'environment':{'python':platform.python_version(),'machine':platform.machine(),'thread_limit':workers,
+                      'packages':{name:version(name) for name in packages}}}
+        atomic_json(output/'study.json',manifest)
+    if hardware is not None:
+        manifest['environment']['hardware']=hardware
+        manifest['environment']['thread_limit']=workers
+        manifest['score_batch_rows']=score_batch
         atomic_json(output/'study.json',manifest)
     began=time.perf_counter();parts,split=split_four(arrays['times'],meta['embargo_seconds'],train_fraction)
     train=parts['train'];labels=arrays['labels'];x=arrays['x']
@@ -134,15 +150,17 @@ def run(directory,output,*,specs=None,train_fraction=.5):
         state={'source':meta['source'],'elapsed_seconds':time.perf_counter()-began,**values}
         atomic_json(output/'progress.json',state);print(json.dumps(state),flush=True)
     try:
-        with threadpool_limits(2),joblib.parallel_backend('threading',n_jobs=2):
-            progress(stage='fit_train_only_scaler',rows=len(reference))
-            scaler=fit_scaler(x,reference)
+        with threadpool_limits(workers),joblib.parallel_backend('threading',n_jobs=workers):
+            scaler=None
+            if any(spec['kind'] in ('distance','sgd','kmeans','lof') for spec in specs):
+                progress(stage='fit_train_only_scaler',rows=len(reference))
+                scaler=fit_scaler(x,reference)
             for spec in specs:
                 name=spec['id'];old=manifest['models'].get(name,{})
                 if old.get('status') in ('VALIDATED','EVALUATED','SKIPPED'):continue
                 progress(stage='fit',model=name)
                 model,result=fit(spec,x,labels,reference,supervised,scaler,
-                    heartbeat=lambda **kw:progress(stage='fit',model=name,**kw))
+                    heartbeat=lambda **kw:progress(stage='fit',model=name,**kw),workers=workers)
                 result['specification']=spec
                 if model is None:
                     manifest['models'][name]=result;atomic_json(output/'study.json',manifest);continue
@@ -153,14 +171,14 @@ def run(directory,output,*,specs=None,train_fraction=.5):
                 result['artifact']={'file':artifact.name,'sha256':digest_file(artifact),'bytes':artifact.stat().st_size}
                 progress(stage='calibrate',model=name)
                 scores,seconds=score_all(model,x,calibration,
-                    heartbeat=lambda **kw:progress(stage='calibrate',model=name,**kw))
+                    heartbeat=lambda **kw:progress(stage='calibrate',model=name,**kw),batch_size=score_batch)
                 threshold=threshold_from_calibration(scores)
                 result.update(threshold=threshold,threshold_rule='99% higher quantile; strict >',
                               calibration=evaluate(scores,threshold,labels[calibration]),calibration_seconds=seconds)
                 del scores
                 progress(stage='validate',model=name)
                 scores,seconds=score_all(model,x,parts['validation'],
-                    heartbeat=lambda **kw:progress(stage='validate',model=name,**kw))
+                    heartbeat=lambda **kw:progress(stage='validate',model=name,**kw),batch_size=score_batch)
                 result.update(validation=evaluate(scores,threshold,labels[parts['validation']]),
                               validation_seconds=seconds,status='VALIDATED')
                 manifest['models'][name]=result;atomic_json(output/'study.json',manifest)
@@ -182,9 +200,11 @@ def run(directory,output,*,specs=None,train_fraction=.5):
                 # Only artifacts just generated by this trusted job and matching its manifest.
                 bundle=joblib.load(artifact)
                 if bundle['plan_sha256']!=plan_hash:raise ValueError('artifact_plan_mismatch')
+                if hardware is not None and hasattr(bundle['model'],'use_gpu'):
+                    bundle['model'].use_gpu()
                 progress(stage='final_test',model=name)
                 scores,seconds=score_all(bundle['model'],x,test,
-                    heartbeat=lambda **kw:progress(stage='final_test',model=name,**kw))
+                    heartbeat=lambda **kw:progress(stage='final_test',model=name,**kw),batch_size=score_batch)
                 result.update(test=evaluate(scores,result['threshold'],labels[test]),
                               seen_test=evaluate(scores[seen],result['threshold'],labels[test][seen]),
                               unseen_test=evaluate(scores[~seen],result['threshold'],labels[test][~seen]),
