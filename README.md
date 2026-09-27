@@ -1,3 +1,13 @@
+> Colab 학습 기본값은 [GPU 비교 profile](docs/ml/11-colab-gpu/RUNBOOK.md)입니다. 기존 CPU 연구와 HTTP 파일 추론은 보존합니다.
+
+> **현재 실행: Redis 없음.** [로그 파일→피처→탐지 실행 방법](docs/ml/10-file-pipeline/RUNBOOK.md). 정책·인증 집행은 이번 범위에서 제외합니다.
+
+> **2026-09-27 현재:** 로컬 학습은 발열로 중단. 최종 평가 179개·RBA validation 11개 보존. [현재 결과](docs/ml/07-full-data-study/RESULTS.md) · [추론 Docker 실행](docs/ml/08-lab-inference/RUNBOOK.md) · [Colab 재개와 모델 확인](docs/ml/09-colab/HOWTO.md).
+> 신규 실험 경로는 `python -m zetty_uba.lab`이며 기존 v1 설명·명령은 아래에 보존되어 있습니다.
+
+> **2026-09-26 신규 공개 데이터 학습:** [단계별 STAR 기록](docs/ml/README.md) · [실행 방법](docs/ml/04-model-training/RUNBOOK.md).
+> `src/zetty_uba`는 독립 offline 학습 경로다. 아래 문서는 보존된 v1 runtime을 설명하며 신규 모델의 서비스 연결 완료를 뜻하지 않는다.
+
 # 🔍 ZETI UBA Analyzer — 7 Factor + Claude ReAct
 
 > **ZETI (Zero Trust + UBA) — 아주대 캡스톤 / Google × Ajou AI Capstone Design**
@@ -524,3 +534,5 @@ cat docs/kpi/SUMMARY.md                              # 전체 KPI 요약
 > **본 uba-analyzer 는 ZETI 의 _탐지 본체_ 입니다.**
 > 결정론 + 통계 + LLM 의 3 계층, 7 팩터, ReAct + 3 MCP 도구, 환각 strip 후 한국어 인시던트 리포트 — 쿠팡식 저속 유출과 분산 enumeration 모두 잡는 게 목표.
 > "키가 유출되더라도 **감시·통제**" — 멘토 스토리라인의 _그_ 감시·통제.
+
+Colab CUDA assertion / Drive 용량 복구: [STAR 및 기존 VM 복구 셀](docs/ml/12-colab-recovery/README.md). 현재 기본 프로파일은 `colab-gpu-v2`입니다.

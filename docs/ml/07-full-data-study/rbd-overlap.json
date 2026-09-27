@@ -1,0 +1,170 @@
+{
+  "identity_policy": "raw published user_id/entity/exact timestamp hashed for audit only; no identities exported",
+  "files": {
+    "Crypto_desktop.parquet": {
+      "raw_rows": 162545,
+      "distinct_identity_time": 161517,
+      "repeated_identity_time_rows": 1028
+    },
+    "Crypto_smartphone.parquet": {
+      "raw_rows": 181217,
+      "distinct_identity_time": 178848,
+      "repeated_identity_time_rows": 2369
+    },
+    "NonEnc_desktop.parquet": {
+      "raw_rows": 221145,
+      "distinct_identity_time": 219735,
+      "repeated_identity_time_rows": 1410
+    },
+    "NonEnc_smartphone.parquet": {
+      "raw_rows": 221695,
+      "distinct_identity_time": 218989,
+      "repeated_identity_time_rows": 2706
+    },
+    "OutFlash_desktop.parquet": {
+      "raw_rows": 172022,
+      "distinct_identity_time": 170994,
+      "repeated_identity_time_rows": 1028
+    },
+    "OutFlash_smartphone.parquet": {
+      "raw_rows": 186900,
+      "distinct_identity_time": 184531,
+      "repeated_identity_time_rows": 2369
+    },
+    "OutTLS_desktop.parquet": {
+      "raw_rows": 163660,
+      "distinct_identity_time": 162632,
+      "repeated_identity_time_rows": 1028
+    },
+    "OutTLS_smartphone.parquet": {
+      "raw_rows": 182850,
+      "distinct_identity_time": 180421,
+      "repeated_identity_time_rows": 2429
+    },
+    "P2P_desktop.parquet": {
+      "raw_rows": 204324,
+      "distinct_identity_time": 202486,
+      "repeated_identity_time_rows": 1838
+    },
+    "P2P_smartphone.parquet": {
+      "raw_rows": 207956,
+      "distinct_identity_time": 204231,
+      "repeated_identity_time_rows": 3725
+    },
+    "Phishing_desktop.parquet": {
+      "raw_rows": 16936,
+      "distinct_identity_time": 16806,
+      "repeated_identity_time_rows": 130
+    },
+    "Phishing_smartphone.parquet": {
+      "raw_rows": 42974,
+      "distinct_identity_time": 42398,
+      "repeated_identity_time_rows": 576
+    }
+  },
+  "distinct_identity_time_across_all_files": 576800,
+  "overlap_pairs": [
+    {
+      "left": "Crypto_desktop.parquet",
+      "right": "NonEnc_desktop.parquet",
+      "shared_identity_time": 160553
+    },
+    {
+      "left": "Crypto_desktop.parquet",
+      "right": "OutFlash_desktop.parquet",
+      "shared_identity_time": 160174
+    },
+    {
+      "left": "Crypto_desktop.parquet",
+      "right": "OutTLS_desktop.parquet",
+      "shared_identity_time": 160174
+    },
+    {
+      "left": "Crypto_desktop.parquet",
+      "right": "P2P_desktop.parquet",
+      "shared_identity_time": 160174
+    },
+    {
+      "left": "Crypto_smartphone.parquet",
+      "right": "NonEnc_smartphone.parquet",
+      "shared_identity_time": 178367
+    },
+    {
+      "left": "Crypto_smartphone.parquet",
+      "right": "OutFlash_smartphone.parquet",
+      "shared_identity_time": 177892
+    },
+    {
+      "left": "Crypto_smartphone.parquet",
+      "right": "OutTLS_smartphone.parquet",
+      "shared_identity_time": 177892
+    },
+    {
+      "left": "Crypto_smartphone.parquet",
+      "right": "P2P_smartphone.parquet",
+      "shared_identity_time": 177892
+    },
+    {
+      "left": "NonEnc_desktop.parquet",
+      "right": "OutFlash_desktop.parquet",
+      "shared_identity_time": 161085
+    },
+    {
+      "left": "NonEnc_desktop.parquet",
+      "right": "OutTLS_desktop.parquet",
+      "shared_identity_time": 160212
+    },
+    {
+      "left": "NonEnc_desktop.parquet",
+      "right": "P2P_desktop.parquet",
+      "shared_identity_time": 166102
+    },
+    {
+      "left": "NonEnc_smartphone.parquet",
+      "right": "OutFlash_smartphone.parquet",
+      "shared_identity_time": 178701
+    },
+    {
+      "left": "NonEnc_smartphone.parquet",
+      "right": "OutTLS_smartphone.parquet",
+      "shared_identity_time": 177963
+    },
+    {
+      "left": "NonEnc_smartphone.parquet",
+      "right": "P2P_smartphone.parquet",
+      "shared_identity_time": 181511
+    },
+    {
+      "left": "OutFlash_desktop.parquet",
+      "right": "OutTLS_desktop.parquet",
+      "shared_identity_time": 160174
+    },
+    {
+      "left": "OutFlash_desktop.parquet",
+      "right": "P2P_desktop.parquet",
+      "shared_identity_time": 161250
+    },
+    {
+      "left": "OutFlash_smartphone.parquet",
+      "right": "OutTLS_smartphone.parquet",
+      "shared_identity_time": 177892
+    },
+    {
+      "left": "OutFlash_smartphone.parquet",
+      "right": "P2P_smartphone.parquet",
+      "shared_identity_time": 178648
+    },
+    {
+      "left": "OutTLS_desktop.parquet",
+      "right": "P2P_desktop.parquet",
+      "shared_identity_time": 160325
+    },
+    {
+      "left": "OutTLS_smartphone.parquet",
+      "right": "P2P_smartphone.parquet",
+      "shared_identity_time": 178203
+    }
+  ],
+  "interpretation": "different task labels can legitimately differ for a shared window; do not pool as independent examples",
+  "training_policy": "each file/source has an independent model and time split; no cross-task training pool"
+}

@@ -1,0 +1,118 @@
+{
+  "status": "STOPPED_BY_USER",
+  "sources": [
+    {
+      "source": "Crypto_desktop",
+      "status": "COMPLETED",
+      "selected_model": "hgb200-leaf31-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "Crypto_smartphone",
+      "status": "COMPLETED",
+      "selected_model": "hgb100-leaf15-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "NonEnc_desktop",
+      "status": "COMPLETED",
+      "selected_model": "rf100-depth12-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "NonEnc_smartphone",
+      "status": "COMPLETED",
+      "selected_model": "rf100-depth12-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "OutFlash_desktop",
+      "status": "COMPLETED",
+      "selected_model": "hgb200-leaf31-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "OutFlash_smartphone",
+      "status": "COMPLETED",
+      "selected_model": "hgb200-leaf31-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "OutTLS_desktop",
+      "status": "COMPLETED",
+      "selected_model": "hgb200-leaf31-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "OutTLS_smartphone",
+      "status": "COMPLETED",
+      "selected_model": "hgb100-leaf15-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "P2P_desktop",
+      "status": "COMPLETED",
+      "selected_model": "hgb200-leaf31-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "P2P_smartphone",
+      "status": "COMPLETED",
+      "selected_model": "rf100-depth12-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "Phishing_desktop",
+      "status": "COMPLETED",
+      "selected_model": "sgdocsvm-linear-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "Phishing_smartphone-expanded",
+      "status": "COMPLETED",
+      "selected_model": "hgb200-leaf31-v2",
+      "EVALUATED": 14,
+      "VALIDATED": 0,
+      "SKIPPED": 0
+    },
+    {
+      "source": "online-shop",
+      "status": "COMPLETED",
+      "selected_model": null,
+      "EVALUATED": 11,
+      "VALIDATED": 0,
+      "SKIPPED": 3
+    },
+    {
+      "source": "rba",
+      "status": "STOPPED_BY_USER",
+      "selected_model": null,
+      "EVALUATED": 0,
+      "VALIDATED": 11,
+      "SKIPPED": 0
+    }
+  ],
+  "eclog": "BLOCKED_GUESTBOOK"
+}

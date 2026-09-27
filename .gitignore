@@ -35,3 +35,12 @@ leaked-key/
 # Python venv
 .venv/
 venv/
+
+# New offline ML: commit tests, never raw data or serialized artifacts.
+!tests/ml/test_*.py
+/data/
+/artifacts/
+/runs/
+*.joblib
+*.parquet
+*.npz
