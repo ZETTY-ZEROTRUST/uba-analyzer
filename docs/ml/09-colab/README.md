@@ -10,7 +10,7 @@ Mac에서 RBA Random Forest 학습 도중 사용자가 CPU 94°C를 보고해 �
 
 ## A — 두 실행 경로
 
-[노트북](../../../notebooks/zetty_rba_colab.ipynb)을 Colab에서 연다. 셀의 경로와 mode를 확인한 후 실행한다. Python 3.12·동일 고정 의존성을 요구한다. 현재 모델은 CPU 구현이므로 GPU를 선택해도 자동 가속되지 않는다.
+[노트북](../../../notebooks/zetty_rba_colab.ipynb)을 Colab에서 연다. 셀의 경로와 mode를 확인한 후 실행한다. Python 3.12/3.13·동일 고정 의존성을 지원한다. resume은 checkpoint와 같은 Python minor가 필요하다. 현재 모델은 CPU 구현이므로 GPU를 선택해도 자동 가속되지 않는다.
 
 - `resume`: 준비한 checkpoint 디렉터리를 Drive에 업로드하고 경로를 지정한다. prepared/rba, runs/rba 및 source_snapshot을 읽는다. 완료된 11개 모델을 재사용하고 중단된 RF fit부터 다시 실행한 뒤 모델 선택·전체 최종 평가를 진행한다. 미완료 RF의 트리 단위 재개는 지원하지 않는다. 원본 snapshot을 별도 PYTHONPATH로 사용해 code/plan hash를 유지한다.
 - `fresh`: 대용량 checkpoint 업로드를 피하려면 공식 RBA ZIP을 Colab에서 직접 받아 전체 전처리와 RBA 연구를 새 버전으로 실행한다. 기존 Mac의 11개 RBA 모델도 다시 학습하므로 resume와 구분한다. 다른 완료 source 13개는 재학습하지 않는다.
@@ -30,3 +30,5 @@ Drive checkpoint는 로컬 Colab 디스크로 복사해서 실행한다. 모델 
 노트북 및 재개 코드를 준비하는 단계다. **Colab runtime 연결·업로드·학습 실행은 아직 하지 않았다.** 로컬 학습은 중단 상태를 유지한다. 코드 검증은 notebook JSON/구문 및 inference-only 검사로 제한한다.
 
 공식 근거: [Colab FAQ](https://research.google.com/colaboratory/faq.html), [Compose service resource limits](https://docs.docker.com/reference/compose-file/services/).
+
+Python 3.13에서는 기본값 `MODE = 'fresh'`로 새 RBA 학습을 실행한다. 3.12 checkpoint를 3.13에서 재개하지 않는다. 기존 Colab 사본은 자동 갱신되지 않으므로 최신 노트북을 다시 열고 새 런타임에서 시작한다. [수정 과정](PYTHON313.md).

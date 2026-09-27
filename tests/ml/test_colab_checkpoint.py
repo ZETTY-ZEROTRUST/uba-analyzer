@@ -39,3 +39,33 @@ class ColabCheckpoint(unittest.TestCase):
         with patch.object(module.platform,'system',return_value='Darwin'), patch('sys.argv',
             ['colab_rba.py','--mode','fresh','--output','/must-not-create','--backup','/must-not-create-backup']):
             with self.assertRaisesRegex(SystemExit,'local training is disabled'):module.main()
+
+    def test_supported_cloud_versions(self):
+        with patch.object(module.platform, 'system', return_value='Linux'), patch.dict(module.os.environ, {'COLAB_RELEASE_TAG':'test'}):
+            for version in [(3,12,13), (3,13,15)]:
+                with patch.object(module.sys, 'version_info', version):
+                    module.validate_runtime()
+                    module.validate_runtime('.'.join(map(str, version)))
+            with patch.object(module.sys, 'version_info', (3,14,0)):
+                with self.assertRaisesRegex(SystemExit, '3.12 or 3.13'):module.validate_runtime()
+
+    def test_cross_minor_resume_rejected_before_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);run=root/'checkpoint/runs/rba';run.mkdir(parents=True)
+            (run/'study.json').write_text(json.dumps({'environment':{'python':'3.12.13'}}))
+            with patch.object(module.platform,'system',return_value='Linux'), patch.dict(module.os.environ,{'COLAB_RELEASE_TAG':'test'}), patch.object(module.sys,'version_info',(3,13,15)), patch.object(module.sys,'argv',['runner','--mode','resume','--checkpoint',str(root/'checkpoint'),'--output',str(root/'out'),'--backup',str(root/'backup')]), patch.object(module.subprocess,'call') as train:
+                with self.assertRaisesRegex(SystemExit,'minor mismatch'):module.main()
+                train.assert_not_called()
+            self.assertFalse((root/'out').exists())
+
+    def test_linux_without_colab_is_rejected(self):
+        with patch.object(module.platform,'system',return_value='Linux'), patch.dict(module.os.environ,{},clear=True):
+            with self.assertRaisesRegex(SystemExit,'local training is disabled'):module.validate_runtime()
+
+    def test_notebook_first_cell_accepts_313(self):
+        notebook=json.loads((Path(__file__).resolve().parents[2]/'notebooks/zetty_rba_colab.ipynb').read_text())
+        cells=[''.join(c['source']) for c in notebook['cells'] if c['cell_type']=='code']
+        for source in cells:compile(source,'colab-cell','exec')
+        with patch.object(module.platform,'system',return_value='Linux'), patch.dict(module.os.environ,{'COLAB_RELEASE_TAG':'test'}), patch.object(module.sys,'version_info',(3,13,15)):
+            exec(compile(cells[0],'runtime-check','exec'),{})
+        self.assertTrue(any("MODE = 'fresh'" in c for c in cells))

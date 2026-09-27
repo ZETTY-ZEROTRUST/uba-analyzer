@@ -1,4 +1,4 @@
-# Python 3.12; isolated offline training, not legacy runtime dependencies.
+# Python 3.12/3.13; isolated offline training, not legacy runtime dependencies.
 numpy==2.2.6
 scipy==1.15.3
 scikit-learn==1.7.2

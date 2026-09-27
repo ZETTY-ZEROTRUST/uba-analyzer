@@ -40,6 +40,21 @@ def sha(path):
     return h.hexdigest()
 
 
+def validate_runtime(checkpoint_python=None):
+    if platform.system() != 'Linux' or not os.environ.get('COLAB_RELEASE_TAG'):
+        raise SystemExit('Google-hosted Colab runtime required; local training is disabled')
+    current = tuple(sys.version_info[:2])
+    if current not in ((3, 12), (3, 13)):
+        raise SystemExit('Python 3.12 or 3.13 required')
+    if checkpoint_python is not None:
+        try:
+            previous = tuple(int(x) for x in checkpoint_python.split('.')[:2])
+        except (AttributeError, ValueError):
+            raise SystemExit('invalid checkpoint Python version')
+        if previous != current:
+            raise SystemExit('checkpoint Python minor mismatch; use its Python version or mode=fresh')
+
+
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--mode',choices=['resume','fresh'],required=True)
@@ -47,9 +62,12 @@ def main():
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--backup',type=Path,required=True)
     args=p.parse_args()
-    if platform.system()!='Linux' or not os.environ.get('COLAB_RELEASE_TAG'):
-        raise SystemExit('Google-hosted Colab runtime required; local training is disabled')
-    if sys.version_info[:2]!=(3,12):raise SystemExit('Python 3.12 required')
+    validate_runtime()
+    if args.mode == 'resume':
+        if args.checkpoint is None:
+            raise SystemExit('checkpoint required')
+        checkpoint_manifest = json.loads((args.checkpoint/'runs/rba/study.json').read_text())
+        validate_runtime(checkpoint_manifest['environment']['python'])
     if args.output.exists():raise SystemExit('use a new output directory; resume from a checkpoint copy')
     root=Path(__file__).resolve().parents[2]
     output=args.output;output.mkdir(parents=True)
