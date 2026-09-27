@@ -63,9 +63,28 @@ class ColabCheckpoint(unittest.TestCase):
             with self.assertRaisesRegex(SystemExit,'local training is disabled'):module.validate_runtime()
 
     def test_notebook_first_cell_accepts_313(self):
-        notebook=json.loads((Path(__file__).resolve().parents[2]/'notebooks/zetty_rba_colab.ipynb').read_text())
+        notebook=json.loads((Path(__file__).resolve().parents[2]/'notebooks/zetty_rba_colab_full.ipynb').read_text())
         cells=[''.join(c['source']) for c in notebook['cells'] if c['cell_type']=='code']
         for source in cells:compile(source,'colab-cell','exec')
         with patch.object(module.platform,'system',return_value='Linux'), patch.dict(module.os.environ,{'COLAB_RELEASE_TAG':'test'}), patch.object(module.sys,'version_info',(3,13,15)), patch.object(module.subprocess,'run'):
             exec(compile(cells[0],'runtime-check','exec'),{})
         self.assertTrue(any("MODE = 'fresh'" in c for c in cells))
+
+
+class RecoveryNotebook(unittest.TestCase):
+    def source(self):
+        path=Path(__file__).resolve().parents[2]/'notebooks/zetty_rba_colab.ipynb'
+        cells=[c for c in json.loads(path.read_text())['cells'] if c['cell_type']=='code']
+        self.assertEqual(len(cells),1)
+        return compile(''.join(cells[0]['source']),'recovery-notebook','exec')
+
+    def test_recovery_blocks_mac_before_subprocess(self):
+        with patch.object(module.platform,'system',return_value='Darwin'), patch.object(module.subprocess,'run') as run:
+            with self.assertRaisesRegex(AssertionError,'Google-hosted Colab'):exec(self.source(),{})
+            run.assert_not_called()
+
+    def test_recovery_blocks_missing_arrays_before_subprocess(self):
+        import shutil
+        with patch.object(module.platform,'system',return_value='Linux'), patch.dict(module.os.environ,{'COLAB_RELEASE_TAG':'test'}), patch.object(module.sys,'version_info',(3,13,15)), patch.object(shutil,'which',return_value='/usr/bin/nvidia-smi'), patch.object(Path,'is_file',return_value=False), patch.object(module.subprocess,'run') as run:
+            with self.assertRaisesRegex(AssertionError,'전처리 파일이 없습니다'):exec(self.source(),{})
+            run.assert_not_called()

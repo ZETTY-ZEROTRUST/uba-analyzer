@@ -16,3 +16,7 @@
 작은 GPU smoke 통과와 mock 검사는 전체 데이터 T4 성공의 증거가 아니다. 사용자 로그에 나타난 weighted GPU quantile assertion 경로를 CPU quantile로 우회하는 변경이며, 실제 원인 입력 조건/업스트림 결함은 확정하지 않았다. 학습/예측은 CUDA로 요청하고 fallback을 검사한다. CPU 분위수 구성과 GPU로의 전송 시간이 추가되므로 완료 시간은 실제 Colab 진행 로그로 판단한다.
 
 Drive가 꽉 찬 세션의 복구는 local-only이므로 런타임 종료 전 결과 ZIP 다운로드가 필요하다. 기존 원본/백업은 삭제하지 않았다.
+
+## 최종 복붙용 노트북
+
+`zetty_rba_colab.ipynb`를 현재 VM용 독립 코드 셀 하나로 정리했다. 기존 일반 노트북은 `zetty_rba_colab_full.ipynb`로 보존했다. 두 파일의 코드 셀 구문 검사 통과. checkpoint/노트북 검사 9개 통과(기존 7개 + Mac 로컬 차단·배열 누락 시 subprocess 이전 중단 2개). 실제 학습·Colab 실행은 수행하지 않았다.

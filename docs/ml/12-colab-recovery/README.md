@@ -41,3 +41,10 @@ runpy.run_path(sys.argv[0], run_name='__main__')
 `phase=quantile, quantile_device=cpu`는 CPU의 가중치 분위수 구성이다. 그 다음 `phase=boosting, device=cuda:0` 및 `boosting_round` 로그를 확인한다. CUDA 학습/예측이 CPU로 fallback하면 실패로 처리한다. 이 우회가 전체 데이터에서 성공했다는 주장은 실제 Colab 완료 전에는 하지 않는다.
 
 새 Colab 세션에서는 GPU 의존성 lock을 설치하고 원본 Drive의 `20260927-full/prepared/rba`를 VM으로 복사해야 한다. results-only 백업을 `resume`할 때는 동일 데이터의 `--prepared-local`을 별도로 지정한다. 원본 체크포인트의 Python minor, 패키지 버전, 프로파일과 source snapshot 검증은 그대로 유지한다. v1 모델을 v2 완료 후보로 섞지 않는다.
+
+## 노트북 자체 정리 — STAR (구현 전)
+
+- S: 별도 답변의 복구 셀과 기존 노트북의 fresh/Drive 경로가 달라 복붙 시 잘못된 셀을 다시 실행할 수 있다.
+- T: `notebooks/zetty_rba_colab.ipynb`를 현재 VM 복구용 최종 진입점으로 바꾼다.
+- A: 독립 실행 가능한 코드 셀 하나에 환경·기존 배열 확인, 새 checkout, v2 복구 실행을 묶는다. 기본값은 현재 VM 배열·Drive 쓰기 없음이며, 완료 ZIP 다운로드는 복구 스크립트가 담당한다. 새 런타임에는 원본 배열 복원이 필요하다고 명시한다. 기존 일반 fresh/resume 노트북은 별도 이름으로 보존한다.
+- R: 구현 후 구문·진입 가드 검증 결과를 RESULTS.md에 기록한다. 노트북 편집으로 실제 학습을 실행하지 않는다.
