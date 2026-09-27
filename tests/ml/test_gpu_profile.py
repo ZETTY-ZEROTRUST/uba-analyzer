@@ -72,7 +72,7 @@ class GPUContracts(unittest.TestCase):
             return booster
         fake_xgb=SimpleNamespace(DataIter=DataIter,QuantileDMatrix=Matrix,train=train,
                                  callback=SimpleNamespace(TrainingCallback=object))
-        fake_cp=SimpleNamespace(asarray=np.asarray,float32=np.float32,
+        fake_cp=SimpleNamespace(asarray=Mock(side_effect=AssertionError("v2 quantile must not stage GPU arrays")),float32=np.float32,
             cuda=SimpleNamespace(runtime=SimpleNamespace(memGetInfo=lambda:(4*1024**3,8*1024**3)),
                                  Stream=SimpleNamespace(null=SimpleNamespace(synchronize=lambda:None))),
             get_default_memory_pool=lambda:SimpleNamespace(free_all_blocks=lambda:None))
@@ -81,6 +81,7 @@ class GPUContracts(unittest.TestCase):
         with patch.dict('sys.modules',{'cupy':fake_cp,'xgboost':fake_xgb}),patch.object(gpu,'batch_rows',return_value=2):
             model,result=gpu.fit(gpu.candidates()[0],x,labels,indices,workers=2,heartbeat=lambda **kw:None)
         self.assertEqual(result['fit_rows'],4)
+        self.assertEqual(result['quantile_device'],'cpu')
         np.testing.assert_array_equal(np.concatenate([c['data'] for c in calls[:2]]),x[indices])
         np.testing.assert_allclose(np.concatenate([c['weight'] for c in calls[:2]]),[2/3,2/3,2,2/3])
         self.assertEqual(params[0]['device'],'cuda:0')

@@ -534,3 +534,5 @@ cat docs/kpi/SUMMARY.md                              # 전체 KPI 요약
 > **본 uba-analyzer 는 ZETI 의 _탐지 본체_ 입니다.**
 > 결정론 + 통계 + LLM 의 3 계층, 7 팩터, ReAct + 3 MCP 도구, 환각 strip 후 한국어 인시던트 리포트 — 쿠팡식 저속 유출과 분산 enumeration 모두 잡는 게 목표.
 > "키가 유출되더라도 **감시·통제**" — 멘토 스토리라인의 _그_ 감시·통제.
+
+Colab CUDA assertion / Drive 용량 복구: [STAR 및 기존 VM 복구 셀](docs/ml/12-colab-recovery/README.md). 현재 기본 프로파일은 `colab-gpu-v2`입니다.

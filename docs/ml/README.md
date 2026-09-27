@@ -28,3 +28,5 @@
 **현재 보관:** `/Users/jjyj2302/zetty/ml-runs/20260927-full`. 최종 평가179개, RBA validation11개. RBA RF/final test와 EClog는 완료가 아니다.
 
 **최신 범위:** [10 파일 pipeline 계획](10-file-pipeline/README.md) · [실행](10-file-pipeline/RUNBOOK.md) · [검증](10-file-pipeline/RESULTS.md). Redis·정책·인증 집행은 제외했다.
+
+Colab CUDA assertion / Drive 용량 복구: [STAR 및 기존 VM 복구 셀](12-colab-recovery/README.md). 현재 기본 프로파일은 `colab-gpu-v2`입니다.

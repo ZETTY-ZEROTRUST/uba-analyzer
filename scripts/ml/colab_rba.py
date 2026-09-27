@@ -40,18 +40,22 @@ def sha(path):
     return h.hexdigest()
 
 
-def copy_prepared(source, destination):
+def copy_prepared(source, destination=None):
     """Only immutable finalized arrays, never SQLite history/chunks/raw data."""
     raw = (source/'dataset.json').read_bytes()
     meta = json.loads(raw)
     if meta.get('status') != 'COMPLETED' or set(meta['files']) != {'x','times','entities','labels'}:
         raise ValueError('prepared dataset must be complete with four arrays')
-    destination.mkdir(parents=True, exist_ok=True)
+    if destination is not None:
+        destination.mkdir(parents=True, exist_ok=True)
     for name, info in meta['files'].items():
         path = source/(name+'.bin')
         if path.is_symlink() or path.stat().st_size != info['bytes'] or sha(path) != info['sha256']:
             raise ValueError('prepared array checksum mismatch')
-        copy_atomic(path, destination/path.name)
+        if destination is not None:
+            copy_atomic(path, destination/path.name)
+    if destination is None:
+        return
     temporary = destination/'dataset.json.copying'
     temporary.write_bytes(raw)
     temporary.replace(destination/'dataset.json')
@@ -75,12 +79,18 @@ def validate_runtime(checkpoint_python=None):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--mode',choices=['resume','fresh','prepared'],required=True)
-    p.add_argument('--profile',choices=['cpu-full','colab-gpu-v1'],default='cpu-full')
+    p.add_argument('--profile',choices=['cpu-full','colab-gpu-v1','colab-gpu-v2'],default='cpu-full')
     p.add_argument('--checkpoint',type=Path)
     p.add_argument('--output',type=Path,required=True)
-    p.add_argument('--backup',type=Path,required=True)
+    p.add_argument('--backup',type=Path)
+    p.add_argument('--backup-policy',choices=['results-only','full','local-only'],default='results-only')
+    p.add_argument('--prepared-local',type=Path,help='reuse existing finalized arrays without copying')
     args=p.parse_args()
     validate_runtime()
+    if args.backup_policy != 'local-only' and args.backup is None:
+        raise SystemExit('--backup required unless --backup-policy local-only')
+    if args.prepared_local is not None and args.mode == 'fresh':
+        raise SystemExit('--prepared-local requires prepared or resume mode')
     if args.mode == 'resume':
         if args.checkpoint is None:
             raise SystemExit('checkpoint required')
@@ -90,11 +100,11 @@ def main():
             raise SystemExit('checkpoint profile mismatch; use mode=prepared to start a new profile')
     if args.output.exists():raise SystemExit('use a new output directory; resume from a checkpoint copy')
     root=Path(__file__).resolve().parents[2]
-    if args.mode == 'prepared' and args.checkpoint is None:
+    if args.mode == 'prepared' and args.checkpoint is None and args.prepared_local is None:
         raise SystemExit('prepared mode requires checkpoint directory containing prepared/rba')
     env=dict(os.environ,OMP_NUM_THREADS='2',OPENBLAS_NUM_THREADS='2',MKL_NUM_THREADS='2',PYTHONDONTWRITEBYTECODE='1')
     env['PYTHONPATH']=str(root/'src')
-    if args.profile == 'colab-gpu-v1':
+    if args.profile in ('colab-gpu-v1','colab-gpu-v2'):
         # Before any multi-GB download/copy/preprocessing; tiny GPU-only smoke fit.
         subprocess.run([sys.executable,'-m','zetty_uba.study.gpu'],cwd=root,env=env,check=True)
     output=args.output;output.mkdir(parents=True)
@@ -102,7 +112,13 @@ def main():
     if args.mode=='resume':
         if args.checkpoint is None:raise SystemExit('checkpoint required')
         prepared=output/'prepared'/'rba';run=output/'runs'/'rba'
-        copy_prepared(args.checkpoint/'prepared'/'rba',prepared)
+        if args.prepared_local is not None:
+            prepared=args.prepared_local.resolve();copy_prepared(prepared)
+        else:
+            source=args.checkpoint/'prepared'/'rba'
+            if not source.exists():
+                raise SystemExit('checkpoint has results only; supply --prepared-local with matching arrays')
+            copy_prepared(source,prepared)
         shutil.copytree(args.checkpoint/'runs'/'rba',run,ignore=shutil.ignore_patterns('*.tmp','__pycache__'))
         manifest=json.loads((run/'study.json').read_text())
         if manifest['status'] not in ('STOPPED_BY_USER','FAILED','RUNNING'):
@@ -131,7 +147,13 @@ def main():
         env['PYTHONPATH']=str(source.parent)
     elif args.mode == 'prepared':
         prepared=output/'prepared'/'rba';run=output/'runs'/'rba'
-        copy_prepared(args.checkpoint/'prepared'/'rba',prepared)
+        if args.prepared_local is not None:
+            prepared=args.prepared_local.resolve();copy_prepared(prepared)
+        else:
+            source=args.checkpoint/'prepared'/'rba'
+            if not source.exists():
+                raise SystemExit('checkpoint has results only; supply --prepared-local with matching arrays')
+            copy_prepared(source,prepared)
     else:
         prepared=output/'prepared'/'rba';run=output/'runs'/'rba'
         env['PYTHONPATH']=str(root/'src')
@@ -142,27 +164,65 @@ def main():
                         '--input',str(raw),'--output',str(prepared)],cwd=root,env=env,check=True)
     preparation_seconds=time.perf_counter()-cloud_started
     print(json.dumps({'stage':'prepared_ready','seconds':preparation_seconds,'profile':args.profile}),flush=True)
+    # Keep original prepared data outside each result backup. No multi-GB duplication.
+    reference={'local_prepared':str(prepared.resolve()),
+               'checkpoint':str(args.checkpoint) if args.checkpoint else None,
+               'dataset_sha256':sha(prepared/'dataset.json')}
+    (output/'prepared-source.json').write_text(json.dumps(reference,indent=2)+'\n')
     finished=threading.Event();errors=[]
+    def safe_backup():
+        if args.backup_policy == 'local-only':return
+        try:
+            backup(run,args.backup/'runs'/'rba')
+            copy_atomic(output/'prepared-source.json',args.backup/'prepared-source.json')
+        except Exception as exc:
+            errors.append(type(exc).__name__+': '+str(exc))
+            print('backup failed; local results retained:',str(exc),flush=True)
     def periodic():
-        while not finished.wait(30):
-            try:backup(run,args.backup/'runs'/'rba')
-            except Exception as exc:errors.append(type(exc).__name__);print('backup error:',type(exc).__name__,flush=True)
-    thread=threading.Thread(target=periodic,daemon=True);thread.start()
+        while not finished.wait(30):safe_backup()
+    thread=threading.Thread(target=periodic,daemon=True)
+    if args.backup_policy != 'local-only':thread.start()
     code=1
     try:
-        # Prepared arrays are essential for resume; copy once, not every heartbeat.
-        copy_prepared(prepared,args.backup/'prepared'/'rba')
-        prepared_backup_seconds=time.perf_counter()-cloud_started-preparation_seconds
-        print(json.dumps({'stage':'prepared_backup_ready','seconds':prepared_backup_seconds}),flush=True)
+        if args.backup_policy == 'full':
+            try:copy_prepared(prepared,args.backup/'prepared'/'rba')
+            except Exception as exc:
+                errors.append(type(exc).__name__+': '+str(exc))
+                print('prepared backup failed; continuing with local arrays:',str(exc),flush=True)
+        print(json.dumps({'stage':'training_start','backup_policy':args.backup_policy,
+                          'prepared':str(prepared)}),flush=True)
         command=[sys.executable,'-m','zetty_uba.study','train','--prepared',str(prepared),'--output',str(run)]
         if args.profile != 'cpu-full':command+=['--profile',args.profile]
         code=subprocess.call(command,cwd=root,env=env)
     finally:
-        finished.set();thread.join();backup(run,args.backup/'runs'/'rba')
-        (args.backup/'cloud-execution.json').write_text(json.dumps({'returncode':code,'mode':args.mode,
-            'platform':platform.platform(),'profile':args.profile,'preparation_seconds':preparation_seconds,
-            'elapsed_seconds':time.perf_counter()-cloud_started,'backup_errors':errors,'finished_epoch':time.time()},indent=2)+'\n')
-    raise SystemExit(code)
+        finished.set()
+        if thread.is_alive():thread.join()
+        marker=run/'study.json'
+        if code and marker.exists():
+            manifest=json.loads(marker.read_text())
+            if manifest.get('status') == 'RUNNING':
+                manifest['status']='FAILED'
+                manifest['failure']={'type':'ProcessExit','returncode':code,
+                                     'message':'Training child exited before finalizing; inspect execution log'}
+                temporary=marker.with_suffix('.json.tmp')
+                temporary.write_text(json.dumps(manifest,indent=2)+'\n');temporary.replace(marker)
+        safe_backup()
+        record={'returncode':code,'mode':args.mode,'platform':platform.platform(),
+                'profile':args.profile,'preparation_seconds':preparation_seconds,
+                'elapsed_seconds':time.perf_counter()-cloud_started,
+                'backup_policy':args.backup_policy,'backup_errors':errors,
+                'finished_epoch':time.time()}
+        local_record=output/'cloud-execution.json'
+        local_record.write_text(json.dumps(record,indent=2)+'\n')
+        if args.backup_policy != 'local-only':
+            try:copy_atomic(local_record,args.backup/'cloud-execution.json')
+            except Exception as exc:
+                errors.append(type(exc).__name__+': '+str(exc))
+                local_record.write_text(json.dumps(record,indent=2)+'\n')
+                print('execution record backup failed; see',local_record,flush=True)
+        print(json.dumps({'stage':'training_exit','returncode':code,'output':str(output),
+                          'backup_policy':args.backup_policy,'backup_errors':errors}),flush=True)
+    raise SystemExit(128-code if code < 0 else code)
 
 
 if __name__=='__main__':main()

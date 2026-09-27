@@ -6,15 +6,15 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-PROFILE = 'colab-gpu-v1'
+PROFILE = 'colab-gpu-v2'
 
 
-def candidates():
+def candidates(profile=PROFILE):
     # GPU models first: finish useful GPU work before inexpensive CPU baselines.
     return [
-        {'id': f'xgb-cuda-d{depth}-r{rounds}-seed42-v1', 'kind': 'xgb',
+        {'id': f"xgb-cuda-d{depth}-r{rounds}-seed42-{profile.rsplit('-', 1)[-1]}", 'kind': 'xgb',
          'depth': depth, 'rounds': rounds, 'max_bin': 128, 'seed': 42,
-         'eta': .1, 'lambda': 3.0}
+         'eta': .1, 'lambda': 3.0, 'quantile_device': 'cpu' if profile == PROFILE else 'cuda'}
         for depth in (4, 6) for rounds in (200, 400)
     ] + [
         {'id': f'if-t100-s512-seed{seed}', 'kind': 'if', 'trees': 100,
@@ -54,15 +54,15 @@ def preflight():
         free, total = cp.cuda.runtime.memGetInfo()
         if free < 2 * 1024**3:
             raise RuntimeError('Less than 2 GiB free VRAM; reconnect to a clean GPU runtime')
-        data = cp.arange(64, dtype=cp.float32).reshape(32, 2)
-        target = cp.asarray(np.arange(32) % 2, dtype=cp.float32)
-        matrix = xgb.QuantileDMatrix(data, label=target, max_bin=16)
-        model = xgb.train({'device':'cuda:0', 'tree_method':'hist', 'max_bin':16,
-                           'max_depth':1, 'objective':'binary:logistic', 'nthread':cpu_workers()},
-                          matrix, num_boost_round=1)
-        device = require_cuda(model)
-        if not bool(cp.isfinite(model.inplace_predict(data)).all()):
+        # Exercise the same weighted CPU iterator / CUDA training path as the study.
+        data = np.arange(128, dtype=np.float32).reshape(64, 2)
+        target = (np.arange(64) % 7 == 0).astype(np.int8)
+        spec = dict(candidates()[0], rounds=1, depth=1, max_bin=16)
+        model, _ = fit(spec, data, target, np.arange(64), workers=cpu_workers(),
+                       heartbeat=lambda **kw: None)
+        if not np.isfinite(model.score(data)).all():
             raise RuntimeError('GPU smoke prediction is non-finite')
+        device = require_cuda(model._model)
         cp.cuda.Stream.null.synchronize()
         name = properties['name']
         result = {'name':name.decode() if isinstance(name, bytes) else name,
@@ -70,7 +70,7 @@ def preflight():
                   'cuda_runtime':cp.cuda.runtime.runtimeGetVersion(),
                   'cuda_driver':cp.cuda.runtime.driverGetVersion(), 'cpu_workers':cpu_workers(),
                   'xgboost':xgb.__version__, 'cupy':cp.__version__, 'smoke':'passed'}
-        del data, target, matrix, model
+        del data, target, model
         cp.get_default_memory_pool().free_all_blocks()
         return result
 
@@ -115,6 +115,9 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
     free, _ = cp.cuda.runtime.memGetInfo()
     size = batch_rows(free, x.shape[1])
 
+    quantile_device = spec.get('quantile_device', 'cuda')
+    array = np.asarray if quantile_device == 'cpu' else cp.asarray
+
     class Iterator(xgb.DataIter):
         def __init__(self):
             self.offset = 0
@@ -128,9 +131,9 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
                 return False
             selection = indices[self.offset:self.offset + size]
             truth = labels[selection]
-            input_data(data=cp.asarray(x[selection], dtype=cp.float32),
-                       label=cp.asarray(truth, dtype=cp.float32),
-                       weight=cp.asarray(len(indices) / (2 * counts[truth]), dtype=cp.float32))
+            input_data(data=array(x[selection], dtype=np.float32),
+                       label=array(truth, dtype=np.float32),
+                       weight=array(len(indices) / (2 * counts[truth]), dtype=np.float32))
             self.offset += len(selection)
             return True
 
@@ -141,10 +144,12 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
                 heartbeat(boosting_round=epoch + 1, total_rounds=spec['rounds'])
             return False
 
+    heartbeat(phase='quantile', quantile_device=quantile_device)
     matrix = xgb.QuantileDMatrix(Iterator(), max_bin=spec['max_bin'], nthread=workers,
                                 max_quantile_batches=8)
     if matrix.num_row() != len(indices):
         raise RuntimeError('GPU training row coverage mismatch')
+    heartbeat(phase='boosting', device='cuda:0')
     booster = xgb.train({'device':'cuda:0', 'tree_method':'hist', 'objective':'binary:logistic',
                          'max_depth':spec['depth'], 'eta':spec['eta'], 'lambda':spec['lambda'],
                          'max_bin':spec['max_bin'], 'seed':spec['seed'], 'nthread':workers,
@@ -155,7 +160,7 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
     fitted = GPUBooster(bytes(booster.save_raw(raw_format='ubj')), device, workers)
     result = {'status':'FITTED', 'fit_rows':len(indices), 'fit_seconds':time.perf_counter()-started,
               'fit_label_counts':{str(k):int(v) for k,v in enumerate(counts)},
-              'full_eligible_training':True, 'device':device, 'batch_rows':size,
+              'full_eligible_training':True, 'quantile_device':quantile_device, 'device':device, 'batch_rows':size,
               'class_weight':'balanced using train labels only', 'native_format':'ubj',
               'epochs':1}
     del matrix, booster

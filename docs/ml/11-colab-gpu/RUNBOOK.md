@@ -1,3 +1,5 @@
+> 전체 데이터 v1 실행에서 CUDA weighted-quantile assertion이 관측되었습니다. 새 학습은 [v2 복구 절차](../12-colab-recovery/README.md)를 사용하세요. 아래는 v1 도입 시점의 기록입니다.
+
 # Colab GPU 실행
 
 1. 최신 `notebooks/zetty_rba_colab.ipynb`를 웹에서 열어 새 Drive 사본을 만든다. 기존 사본은 자동 갱신되지 않는다.

@@ -92,11 +92,11 @@ def select_model(results):
 def run(directory,output,*,specs=None,train_fraction=.5,profile='cpu-full'):
     hardware=None;workers=2;score_batch=8192
     packages=('numpy','scipy','scikit-learn','joblib','threadpoolctl','pyarrow')
-    if profile == 'colab-gpu-v1':
+    if profile in ('colab-gpu-v1', 'colab-gpu-v2'):
         from .gpu import preflight, candidates as gpu_candidates, batch_rows
         hardware=preflight();workers=hardware['cpu_workers']
         if specs is not None:raise ValueError('GPU profile uses fixed preregistered candidates')
-        specs=gpu_candidates();packages+=('xgboost','cupy-cuda12x','fastrlock','nvidia-nccl-cu12')
+        specs=gpu_candidates(profile);packages+=('xgboost','cupy-cuda12x','fastrlock','nvidia-nccl-cu12')
     elif profile != 'cpu-full':raise ValueError('unknown_study_profile')
     directory,output=Path(directory),Path(output)
     arrays,meta=open_data(directory)
