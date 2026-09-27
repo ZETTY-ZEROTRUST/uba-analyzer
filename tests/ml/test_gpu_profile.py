@@ -102,7 +102,7 @@ class GPUContracts(unittest.TestCase):
             with self.assertRaisesRegex(ValueError,'checksum'):cloud.copy_prepared(src,root/'bad')
             self.assertFalse((root/'bad/dataset.json').exists())
 
-    def test_profile_run_full_holdouts_without_training(self):
+    def test_profile_run_full_holdouts_without_training(self, profile=gpu.PROFILE):
         hardware={'cpu_workers':2,'free_vram_bytes':4*1024**3,'device':'cuda:0','smoke':'mock-only'}
         seen=[]
         def fake_fit(spec,x,labels,reference,supervised,scaler,**kw):
@@ -114,16 +114,23 @@ class GPUContracts(unittest.TestCase):
             for i in range(2000):sink.append([float(i%10==0)],i*300,'0'*64,1 if i%10==0 else 0)
             sink.finish({'source':'fixture','label_kind':'task','embargo_seconds':300,'feature_version':'fixture'})
             with patch.object(gpu,'preflight',return_value=hardware),patch.object(runner,'version',return_value='fixture'),patch.object(runner,'fit',side_effect=fake_fit),patch.object(runner,'fit_scaler') as scale:
-                result=runner.run(root/'data',root/'run',profile=gpu.PROFILE)
+                result=runner.run(root/'data',root/'run',profile=profile)
                 scale.assert_not_called()
                 self.assertEqual(result['status'],'COMPLETED')
-                self.assertEqual(result['profile'],gpu.PROFILE)
+                self.assertEqual(result['profile'],profile)
                 self.assertTrue(result['selection']['frozen_before_test'])
+                if profile == 'colab-gpu-v3':
+                    self.assertEqual(result['threshold_tail'],.001)
+                    self.assertFalse(result['selection']['deployment_ready'])
+                    self.assertEqual(len(next(iter(result['models'].values()))['validation_operating_points']),3)
                 self.assertTrue(all(r['status']=='EVALUATED' for r in result['models'].values()))
-                self.assertEqual(len(seen),6)
+                self.assertEqual(len(seen),len(gpu.candidates(profile)))
                 self.assertTrue(all(np.max(sup)<1000 for _,sup,_ in seen))
-                runner.run(root/'data',root/'run',profile=gpu.PROFILE)
-                self.assertEqual(len(seen),6)
+                runner.run(root/'data',root/'run',profile=profile)
+                self.assertEqual(len(seen),len(gpu.candidates(profile)))
+
+    def test_v3_run_full_holdouts_without_training(self):
+        self.test_profile_run_full_holdouts_without_training(profile='colab-gpu-v3')
 
     def test_gpu_unavailable_stops_before_download_or_output(self):
         with tempfile.TemporaryDirectory() as tmp:

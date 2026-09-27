@@ -10,6 +10,17 @@ PROFILE = 'colab-gpu-v2'
 
 
 def candidates(profile=PROFILE):
+    if profile == 'colab-gpu-v3':
+        base = dict(candidates('colab-gpu-v2')[3], id='xgb-d6-r400-balanced-v3')
+        result = [base]
+        for depth in (8, 10, 12):
+            for rounds, weighting in ((400, 'balanced'), (800, 'balanced'), (800, 'sqrt')):
+                spec = dict(base, id=f'xgb-d{depth}-r{rounds}-{weighting}-v3',
+                            depth=depth, rounds=rounds, weighting=weighting)
+                if rounds == 800:
+                    spec.update(eta=.05, **{'lambda':10., 'min_child_weight':10., 'max_delta_step':1.})
+                result.append(spec)
+        return result + candidates('colab-gpu-v2')[4:]
     # GPU models first: finish useful GPU work before inexpensive CPU baselines.
     return [
         {'id': f"xgb-cuda-d{depth}-r{rounds}-seed42-{profile.rsplit('-', 1)[-1]}", 'kind': 'xgb',
@@ -105,6 +116,15 @@ class GPUBooster:
         return self._model.inplace_predict(np.asarray(x, dtype=np.float32))
 
 
+def class_weights(counts, mode='balanced'):
+    if mode not in ('balanced', 'sqrt'):
+        raise ValueError('unknown weighting mode')
+    ratio = float(counts[0]) / float(counts[1])
+    positive = ratio if mode == 'balanced' else np.sqrt(ratio)
+    scale = sum(counts) / (counts[0] + positive * counts[1])
+    return np.array([scale, scale * positive], dtype=np.float64)
+
+
 def fit(spec, x, labels, indices, *, workers, heartbeat):
     import cupy as cp
     import xgboost as xgb
@@ -112,6 +132,7 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
     counts = np.bincount(labels[indices], minlength=2)
     if len(counts) != 2 or not np.all(counts > 0):
         return None, {'status':'SKIPPED', 'reason':'training_requires_both_task_classes'}
+    weights = class_weights(counts, spec.get('weighting', 'balanced'))
     free, _ = cp.cuda.runtime.memGetInfo()
     size = batch_rows(free, x.shape[1])
 
@@ -133,7 +154,7 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
             truth = labels[selection]
             input_data(data=array(x[selection], dtype=np.float32),
                        label=array(truth, dtype=np.float32),
-                       weight=array(len(indices) / (2 * counts[truth]), dtype=np.float32))
+                       weight=array(weights[truth], dtype=np.float32))
             self.offset += len(selection)
             return True
 
@@ -153,7 +174,9 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
     booster = xgb.train({'device':'cuda:0', 'tree_method':'hist', 'objective':'binary:logistic',
                          'max_depth':spec['depth'], 'eta':spec['eta'], 'lambda':spec['lambda'],
                          'max_bin':spec['max_bin'], 'seed':spec['seed'], 'nthread':workers,
-                         'subsample':1.0, 'colsample_bytree':1.0},
+                         'subsample':1.0, 'colsample_bytree':1.0,
+                         'min_child_weight':spec.get('min_child_weight',1.),
+                         'max_delta_step':spec.get('max_delta_step',0.)},
                         matrix, num_boost_round=spec['rounds'], callbacks=[Progress()])
     device = require_cuda(booster)
     cp.cuda.Stream.null.synchronize()
@@ -161,7 +184,8 @@ def fit(spec, x, labels, indices, *, workers, heartbeat):
     result = {'status':'FITTED', 'fit_rows':len(indices), 'fit_seconds':time.perf_counter()-started,
               'fit_label_counts':{str(k):int(v) for k,v in enumerate(counts)},
               'full_eligible_training':True, 'quantile_device':quantile_device, 'device':device, 'batch_rows':size,
-              'class_weight':'balanced using train labels only', 'native_format':'ubj',
+              'class_weight':spec.get('weighting','balanced')+' using train labels only',
+              'class_weights':weights.tolist(), 'native_format':'ubj',
               'epochs':1}
     del matrix, booster
     cp.get_default_memory_pool().free_all_blocks()

@@ -71,17 +71,17 @@ def score_all(model,x,indices,heartbeat=lambda **kw:None,batch_size=8192):
     return scores,time.perf_counter()-started
 
 
-def select_model(results):
+def select_model(results, fpr_limit=.02, require_detection=False):
     eligible=[]
     for name,result in results.items():
         value=result.get('validation')
-        if value and value['recall'] is not None and value['fpr'] is not None and value['fpr']<=.02:
+        if value and value['recall'] is not None and value['fpr'] is not None and value['fpr']<=fpr_limit and (not require_detection or value['recall']>0):
             eligible.append((name,value))
     ranked=sorted(eligible,key=lambda item:(-item[1]['recall'],-(item[1]['precision'] or 0),item[1]['fpr'],item[0]))
     winner=ranked[0][0] if ranked else None
     selected=ranked[0][1] if ranked else None
     c=selected['confusion'] if selected else None
-    return {'selected_model':winner,'validation_fpr_limit':.02,
+    return {'selected_model':winner,'validation_fpr_limit':fpr_limit,
             'rule':'maximize validation recall, then precision, then lower FPR, then stable model id',
             'eligible_ranking':[name for name,_ in ranked],
             'evidence':'limited: validation attacks <20' if c and c['tp']+c['fn']<20 else 'task-specific holdout' if c else 'no eligible labeled comparison',
@@ -91,8 +91,10 @@ def select_model(results):
 
 def run(directory,output,*,specs=None,train_fraction=.5,profile='cpu-full'):
     hardware=None;workers=2;score_batch=8192
+    tuning = profile == 'colab-gpu-v3'
+    tail = .001 if tuning else .01
     packages=('numpy','scipy','scikit-learn','joblib','threadpoolctl','pyarrow')
-    if profile in ('colab-gpu-v1', 'colab-gpu-v2'):
+    if profile in ('colab-gpu-v1', 'colab-gpu-v2', 'colab-gpu-v3'):
         from .gpu import preflight, candidates as gpu_candidates, batch_rows
         hardware=preflight();workers=hardware['cpu_workers']
         if specs is not None:raise ValueError('GPU profile uses fixed preregistered candidates')
@@ -106,7 +108,10 @@ def run(directory,output,*,specs=None,train_fraction=.5,profile='cpu-full'):
     package=Path(__file__).resolve().parents[1]
     if output.resolve().is_relative_to(package):raise ValueError('output_inside_source')
     identity={'dataset_sha256':digest_file(directory/'dataset.json'),'code_sha256':code_hash(),
-              'candidates':specs,'format':'zetty-full-study/2','threshold_tail':.01,'train_fraction':train_fraction}
+              'candidates':specs,'format':'zetty-full-study/2','threshold_tail':tail,'train_fraction':train_fraction}
+    if tuning:
+        identity['evaluation_scope']='exploratory after v2 holdout inspection; independent confirmation required'
+        identity['validation_fpr_limit']=.001
     if hardware is not None:
         identity['profile']=profile
         score_batch=batch_rows(hardware['free_vram_bytes'],len(meta['names']))
@@ -172,8 +177,9 @@ def run(directory,output,*,specs=None,train_fraction=.5,profile='cpu-full'):
                 progress(stage='calibrate',model=name)
                 scores,seconds=score_all(model,x,calibration,
                     heartbeat=lambda **kw:progress(stage='calibrate',model=name,**kw),batch_size=score_batch)
-                threshold=threshold_from_calibration(scores)
-                result.update(threshold=threshold,threshold_rule='99% higher quantile; strict >',
+                threshold=float(np.quantile(scores,1-tail,method='higher')) if tuning else threshold_from_calibration(scores)
+                operating_thresholds={str(t):float(np.quantile(scores,1-t,method='higher')) for t in (.01,.001,.0001)} if tuning else {}
+                result.update(threshold=threshold,threshold_rule=f'{100*(1-tail):g}% higher quantile; strict >',
                               calibration=evaluate(scores,threshold,labels[calibration]),calibration_seconds=seconds)
                 del scores
                 progress(stage='validate',model=name)
@@ -181,9 +187,15 @@ def run(directory,output,*,specs=None,train_fraction=.5,profile='cpu-full'):
                     heartbeat=lambda **kw:progress(stage='validate',model=name,**kw),batch_size=score_batch)
                 result.update(validation=evaluate(scores,threshold,labels[parts['validation']]),
                               validation_seconds=seconds,status='VALIDATED')
+                if tuning:
+                    result['validation_operating_points']={t:{'threshold':th,**metrics(scores,th,labels[parts['validation']])} for t,th in operating_thresholds.items()}
                 manifest['models'][name]=result;atomic_json(output/'study.json',manifest)
                 del scores,model;gc.collect()
-            selection=select_model(manifest['models'])
+            selection=select_model(manifest['models'],fpr_limit=.001 if tuning else .02,require_detection=tuning)
+            if tuning:
+                selection['deployment_ready']=False
+                selection['test_attack_count']=manifest['split_label_counts']['test'].get('1',0)
+                selection['limitation']='Exploratory: few validation attacks; test with no attacks cannot establish recall; independent confirmation required'
             if (output/'selection.json').exists():
                 if json.loads((output/'selection.json').read_text())!=selection:raise ValueError('selection_changed_after_freeze')
             else:atomic_json(output/'selection.json',selection)

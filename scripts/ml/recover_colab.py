@@ -12,6 +12,7 @@ import sys
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--prepared', type=Path, required=True)
+    parser.add_argument('--profile', choices=['colab-gpu-v2','colab-gpu-v3'], default='colab-gpu-v2')
     args = parser.parse_args()
     if platform.system() != 'Linux' or not os.environ.get('COLAB_RELEASE_TAG'):
         raise SystemExit('Google-hosted Colab required; local training is disabled')
@@ -22,7 +23,7 @@ def main():
     output = Path('/content')/f'zetty-rba-recovery-{stamp}'
     log = output.with_suffix('.log')
     command = [sys.executable, str(root/'scripts/ml/colab_rba.py'),
-               '--mode', 'prepared', '--profile', 'colab-gpu-v2',
+               '--mode', 'prepared', '--profile', args.profile,
                '--prepared-local', str(args.prepared), '--output', str(output),
                '--backup-policy', 'local-only']
     print(f'OUTPUT = {str(output)!r}\nLOG = {str(log)!r}', flush=True)

@@ -15,7 +15,7 @@ def main():
     prepare.add_argument('--output',type=Path,required=True)
     prepare.add_argument('--catalog',type=Path,default=Path('docs/ml/01-data-audit/sources.json'))
     train=sub.add_parser('train')
-    train.add_argument('--profile',choices=('cpu-full','colab-gpu-v1','colab-gpu-v2'),default='cpu-full')
+    train.add_argument('--profile',choices=('cpu-full','colab-gpu-v1','colab-gpu-v2','colab-gpu-v3'),default='cpu-full')
     train.add_argument('--train-fraction',type=float,choices=(.4,.5),default=.5)
     train.add_argument('--prepared',type=Path,required=True)
     train.add_argument('--output',type=Path,required=True)

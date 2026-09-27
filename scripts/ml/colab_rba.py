@@ -79,7 +79,7 @@ def validate_runtime(checkpoint_python=None):
 def main():
     p=argparse.ArgumentParser(description=__doc__)
     p.add_argument('--mode',choices=['resume','fresh','prepared'],required=True)
-    p.add_argument('--profile',choices=['cpu-full','colab-gpu-v1','colab-gpu-v2'],default='cpu-full')
+    p.add_argument('--profile',choices=['cpu-full','colab-gpu-v1','colab-gpu-v2','colab-gpu-v3'],default='cpu-full')
     p.add_argument('--checkpoint',type=Path)
     p.add_argument('--output',type=Path,required=True)
     p.add_argument('--backup',type=Path)
@@ -104,7 +104,7 @@ def main():
         raise SystemExit('prepared mode requires checkpoint directory containing prepared/rba')
     env=dict(os.environ,OMP_NUM_THREADS='2',OPENBLAS_NUM_THREADS='2',MKL_NUM_THREADS='2',PYTHONDONTWRITEBYTECODE='1')
     env['PYTHONPATH']=str(root/'src')
-    if args.profile in ('colab-gpu-v1','colab-gpu-v2'):
+    if args.profile in ('colab-gpu-v1','colab-gpu-v2','colab-gpu-v3'):
         # Before any multi-GB download/copy/preprocessing; tiny GPU-only smoke fit.
         subprocess.run([sys.executable,'-m','zetty_uba.study.gpu'],cwd=root,env=env,check=True)
     output=args.output;output.mkdir(parents=True)
